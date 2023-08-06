@@ -19,6 +19,10 @@ impl Player {
     pub fn new() -> Self {
         Self { x: 0, y: 0 }
     }
+
+    pub fn get_pos(&self) -> (i32, i32) {
+        (self.x, self.y)
+    }
 }
 
 

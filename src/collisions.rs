@@ -1,6 +1,4 @@
 use bevy::prelude::*;
-use crate::player::*;
-use crate::structures::*;
 
 pub struct CollisionPlugin;
 
@@ -9,7 +7,7 @@ impl Plugin for CollisionPlugin {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct CollisionComponent {
     x: i32,
     y: i32,
@@ -28,6 +26,16 @@ impl CollisionComponent {
     }
 
     pub fn get_hitbox(&self) -> (i32, i32, i32, i32) {
+        (self.x, self.y, self.w, self.h)
+    }
+}
+
+impl Collisionable for CollisionComponent {
+    fn get_pos(&self) -> (i32, i32) {
+        (self.x, self.y)
+    }
+
+    fn get_hitbox(&self) -> (i32, i32, i32, i32) {
         (self.x, self.y, self.w, self.h)
     }
 }
@@ -65,6 +73,12 @@ pub trait Collisionable {
 
         true
         
+    }
+
+    fn would_collide_with(&self, other: &dyn Collisionable) -> bool {
+        let (x, y) = other.get_pos();
+        let (x, y) = get_position_from_center_to_corner(x, y, other.get_hitbox().2, other.get_hitbox().3);
+        self.would_collide(x, y, &other.get_collision_component())
     }
 
     fn get_collision_component(&self) -> CollisionComponent {

@@ -12,7 +12,7 @@ impl Plugin for StructuresPlugin {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Sanctuary {
     x: i32,
     y: i32,
@@ -24,8 +24,18 @@ impl Sanctuary {
     }
 }
 
+impl Collisionable for Sanctuary {
+    fn get_pos(&self) -> (i32, i32) {
+        (self.x, self.y)
+    }
 
-#[derive(Component)]
+    fn get_hitbox(&self) -> (i32, i32, i32, i32) {
+        (self.x, self.y, SANCTUARY_SIZE as i32, SANCTUARY_SIZE as i32)
+    }
+}
+
+
+#[derive(Component, Clone)]
 pub struct Tower {
     x: i32,
     y: i32,
@@ -53,22 +63,41 @@ impl Collisionable for Tower {
     }
 
     fn get_hitbox(&self) -> (i32, i32, i32, i32) {
-        (self.x, self.y, STRUCT_SIZE as i32, STRUCT_SIZE as i32)
+        (self.x, self.y, TOWER_SIZE as i32, TOWER_SIZE as i32)
     }
 }   
 
 pub fn setup_structures(mut commands: Commands) {
-    let tower = Tower::new(100,100);
+    let tower = Tower::new(100, 100);
+    
+    // Setup sanctuaries
+    for sanctuary in tower.sanctuaries.iter() {
+        let collisioncomponent = CollisionComponent::new_from_component(sanctuary);
+        let sanctuary = Sanctuary::new(sanctuary.x, sanctuary.y);
+
+        commands.spawn((SpriteBundle {
+            transform: Transform::from_xyz(sanctuary.x as f32, sanctuary.y as f32, 1.0),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(SANCTUARY_SIZE, SANCTUARY_SIZE)),
+                color: Color::rgb(0.0, 1.0, 0.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        }, collisioncomponent, sanctuary));
+    }
+
+    // Setup tower
     let collisioncomponent = CollisionComponent::new_from_component(&tower);
     commands.spawn((SpriteBundle {
         transform: Transform::from_xyz(0.0, 0.0, 1.0),
         sprite: Sprite {
-            custom_size: Some(Vec2::new(STRUCT_SIZE, STRUCT_SIZE)),
+            custom_size: Some(Vec2::new(TOWER_SIZE, TOWER_SIZE)),
             ..Default::default()
         },
         ..Default::default()
     }, tower, collisioncomponent));
 }
+
 
 fn update_structures_pos(mut query: Query<(&mut Transform, &Tower)>) {
     for (mut transform, tower) in query.iter_mut() {
@@ -76,4 +105,5 @@ fn update_structures_pos(mut query: Query<(&mut Transform, &Tower)>) {
         transform.translation.y = tower.y as f32;
     }
 }
+
 

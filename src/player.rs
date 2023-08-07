@@ -30,7 +30,7 @@ impl Collisionable for Player {
     }
 
     fn get_hitbox(&self) -> (i32, i32, i32, i32) {
-        (self.x, self.y, PLAYER_HITBOX_WIDTH as i32, PLAYER_HITBOX_HEIGHT as i32)
+        (self.x, self.y, (PLAYER_HITBOX_WIDTH * 0.8) as i32, (PLAYER_HITBOX_HEIGHT*0.8) as i32)
     }
 }
 
@@ -122,24 +122,4 @@ fn spawn_player(mut commands: Commands,
             ..Default::default()
         })
         .insert(player);
-}
-
-fn show_hitbox(
-    mut commands: Commands,
-    mut query: Query<(&Player, &Transform)>,
-    mut keyInput: ResMut<Input<KeyCode>>,
-) {
-    if keyInput.just_pressed(KeyCode::H) {
-        let player = query.single_mut();
-        let (x, y, w, h) = player.0.get_hitbox();
-        commands.spawn(SpriteBundle {
-            transform: Transform::from_xyz(x as f32, y as f32, 1.0),
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(w as f32, h as f32)),
-                color: Color::rgba(1., 0., 0., 0.5),
-                ..Default::default()
-            },
-            ..Default::default()
-        });
-    }
 }

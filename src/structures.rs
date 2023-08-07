@@ -8,7 +8,7 @@ pub struct StructuresPlugin;
 impl Plugin for StructuresPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_structures)
-            .add_systems(Update, (update_structures_pos, show_hitbox));
+            .add_systems(Update, (update_structures_pos));
     }
 }
 
@@ -77,23 +77,3 @@ fn update_structures_pos(mut query: Query<(&mut Transform, &Tower)>) {
     }
 }
 
-fn show_hitbox(
-    mut commands: Commands,
-    mut query: Query<(&Tower, &Transform)>,
-    mut keyInput: ResMut<Input<KeyCode>>,
-) {
-    if keyInput.just_pressed(KeyCode::H) {
-        let tower = query.single_mut();
-        let (x, y, w, h) = tower.0.get_hitbox();
-        println!("x: {}, y: {}, w: {}, h: {}", x, y, w, h);
-        commands.spawn(SpriteBundle {
-            transform: Transform::from_xyz(x as f32, y as f32, 4.0),
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(w as f32, h as f32)),
-                color: Color::rgba(1., 0., 0., 0.5),
-                ..Default::default()
-            },
-            ..Default::default()
-        });
-    }
-}

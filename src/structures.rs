@@ -8,7 +8,7 @@ pub struct StructuresPlugin;
 impl Plugin for StructuresPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_structures)
-            .add_systems(Update, (update_structures_pos));
+            .add_systems(Update, (update_structures_pos, remove_structures_colliding));
     }
 }
 
@@ -69,78 +69,80 @@ impl Collisionable for Tower {
     }
 }   
 
+fn does_collide_with_existing(sanctuary: &Sanctuary, query: &Query<&CollisionComponent>, added_sanctuaries: &[CollisionComponent]) -> bool {
+    query.iter().any(|existing| sanctuary.would_collide_with(existing))
+        || added_sanctuaries.iter().any(|added| sanctuary.would_collide_with(added))
+}
+
+fn setup_sanctuary(commands: &mut Commands, tower: &Tower, collision_query: &Query<&CollisionComponent>) {
+    let mut added_sanctuaries = Vec::new();
+
+    for _ in 0..tower.sanctuaries.len() {
+        let sanctuary = (0..10)
+            .map(|_| Sanctuary::new_random_position())
+            .find(|sanct| !does_collide_with_existing(sanct, &collision_query, &added_sanctuaries))
+            .unwrap_or_else(Sanctuary::new_random_position);  // Use a default position if all attempts failed.
+
+        let collision_component = CollisionComponent::new_from_component(&sanctuary);
+        added_sanctuaries.push(collision_component.clone());
+
+        commands.spawn(SpriteBundle {
+            transform: Transform::from_xyz(sanctuary.x as f32, sanctuary.y as f32, 1.0),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(SANCTUARY_SIZE, SANCTUARY_SIZE)),
+                color: Color::rgb(0.0, 1.0, 0.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(collision_component)
+        .insert(sanctuary);
+    }
+}
+
 pub fn setup_structures(mut commands: Commands, collision_query: Query<&CollisionComponent>) {
     let tower = Tower::new(100, 100);
-    
-    // Setup sanctuaries
-    for _ in 0..tower.sanctuaries.len() {
-        let mut attempts = 0;
-        let max_attempts = 10; // Or whatever number you deem reasonable.
-
-
-        let mut added_sanctuaries: Vec<CollisionComponent> = Vec::new();
-        
-        loop {
-            attempts += 1;
-            
-            let sanctuary = Sanctuary::new_random_position();
-            let collisioncomponent = CollisionComponent::new_from_component(&sanctuary);
-
-            // Check for collisions with existing entities.
-            let mut collides = false;
-            for existing in collision_query.iter() {
-                if sanctuary.would_collide_with(existing) {
-                    collides = true;
-                    break;
-                }
-            }
-
-            // Check for collisions with sanctuaries we've added this frame.
-            if !collides {
-                for added_sanctuary in added_sanctuaries.iter() {
-                    if sanctuary.would_collide_with(added_sanctuary) {
-                        collides = true;
-                        break;
-                    }
-                }
-            }
-
-            if !collides || attempts >= max_attempts {
-                if !collides {
-                    added_sanctuaries.push(collisioncomponent.clone());
-                    commands.spawn((SpriteBundle {
-                        transform: Transform::from_xyz(sanctuary.x as f32, sanctuary.y as f32, 1.0),
-                        sprite: Sprite {
-                            custom_size: Some(Vec2::new(SANCTUARY_SIZE, SANCTUARY_SIZE)),
-                            color: Color::rgb(0.0, 1.0, 0.0),
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    }, collisioncomponent, sanctuary));
-                }
-                break;
-            }
-        }
-    }
+    setup_sanctuary(&mut commands, &tower, &collision_query);
 
     // Setup tower
     let collisioncomponent = CollisionComponent::new_from_component(&tower);
-    commands.spawn((SpriteBundle {
+    commands.spawn(SpriteBundle {
         transform: Transform::from_xyz(0.0, 0.0, 1.0),
         sprite: Sprite {
             custom_size: Some(Vec2::new(TOWER_SIZE, TOWER_SIZE)),
             ..Default::default()
         },
         ..Default::default()
-    }, tower, collisioncomponent));
+    })
+    .insert(tower)
+    .insert(collisioncomponent);
 }
-
 
 fn update_structures_pos(mut query: Query<(&mut Transform, &Tower)>) {
     for (mut transform, tower) in query.iter_mut() {
-        transform.translation.x = tower.x as f32;
-        transform.translation.y = tower.y as f32;
+        transform.translation = Vec3::new(tower.x as f32, tower.y as f32, transform.translation.z);
     }
+}
+fn remove_structures_colliding(
+    mut commands: Commands,
+    mut query: Query<(Entity, &CollisionComponent)>
+) {
+
+    // Collect all the entities with CollisionComponents
+    let all_colliders: Vec<_> = query.iter().collect();
+
+    for (entity, collide_comp) in &all_colliders {
+        for (other_ent, other_col) in &all_colliders {
+            if entity != other_ent {
+                if collide_comp.would_collide_with(*other_col) {
+                    commands.entity(*entity).despawn_recursive();
+                    commands.entity(*other_ent).despawn_recursive();
+                }
+            }
+        }
+    }
+    
+
 }
 
 

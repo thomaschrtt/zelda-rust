@@ -76,9 +76,8 @@ pub trait Collisionable {
     }
 
     fn would_collide_with(&self, other: &dyn Collisionable) -> bool {
-        let (x, y) = other.get_pos();
-        let (x, y) = get_position_from_center_to_corner(x, y, other.get_hitbox().2, other.get_hitbox().3);
-        self.would_collide(x, y, &other.get_collision_component())
+        let self_pos: (i32, i32) = self.get_pos();
+        self.would_collide(self_pos.0, self_pos.1, &other.get_collision_component())
     }
 
     fn get_collision_component(&self) -> CollisionComponent {

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::constants::*;
+use crate::{constants::*, player::*};
 
 
 pub fn setup(
@@ -17,7 +17,13 @@ pub fn setup(
     };
     window.resizable = false;
 
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle {
+        projection: OrthographicProjection {
+            scale : 1.,
+            ..OrthographicProjection::default()
+        },
+        ..Default::default()
+    });
 
     commands.spawn(SpriteBundle {
         texture: asset_server.load("background.png"),
@@ -28,4 +34,26 @@ pub fn setup(
         ..Default::default()
     });
 
+}
+
+pub fn zoom_camera(
+    mut query: Query<&mut OrthographicProjection>,
+    keyboard_input: Res<Input<KeyCode>>,
+) {
+    let mut transform = query.single_mut();
+    if keyboard_input.pressed(KeyCode::S) && transform.scale < 1. {
+        transform.scale = transform.scale + 0.01;
+    }
+    if keyboard_input.pressed(KeyCode::Z) && transform.scale > 0.1{
+        transform.scale = transform.scale - 0.01;
+    }
+}
+
+pub fn track_player(
+    player_query: Query<&Transform, With<Player>>,
+    mut camera: Query<(&mut Camera, &mut Transform), Without<Player>>,
+) {
+    let player_transform = player_query.single();
+    let mut camera_transform = camera.single_mut().1;
+    camera_transform.translation = Vec3::new(player_transform.translation.x, player_transform.translation.y, camera_transform.translation.z);
 }

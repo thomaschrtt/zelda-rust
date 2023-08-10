@@ -8,7 +8,11 @@ pub struct StructuresPlugin;
 impl Plugin for StructuresPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_structures)
-            .add_systems(Update, (update_structures_pos, remove_sanctuaries_colliding_with_tower));
+            .add_systems(Update, (update_structures_pos, 
+                                                    remove_sanctuaries_colliding_with_tower, 
+                                                    update_visibility, 
+                                                    change_visibility_with_keybinding, 
+                                                    update_collision_component));
     }
 }
 
@@ -16,11 +20,12 @@ impl Plugin for StructuresPlugin {
 pub struct Sanctuary {
     x: i32,
     y: i32,
+    visibility: bool,
 }
 
 impl Sanctuary {
     pub fn new(x: i32, y: i32) -> Self {
-        Sanctuary { x, y }
+        Sanctuary { x, y, visibility: false }
     }
     pub fn new_random_position() -> Self {
         let mut rng = rand::thread_rng();
@@ -36,7 +41,11 @@ impl Collisionable for Sanctuary {
     }
 
     fn get_hitbox(&self) -> (i32, i32, i32, i32) {
-        (self.x, self.y, SANCTUARY_SIZE as i32 + 5, SANCTUARY_SIZE as i32 + 5)
+        if self.visibility {
+            (self.x, self.y, SANCTUARY_SIZE as i32, SANCTUARY_SIZE as i32)
+        } else {
+            (-1000, -1000, 0, 0)
+        }
     }
 }
 
@@ -141,6 +150,29 @@ fn remove_sanctuaries_colliding_with_tower(
 fn update_structures_pos(mut query: Query<(&mut Transform, &Tower)>) {
     for (mut transform, tower) in query.iter_mut() {
         transform.translation = Vec3::new(tower.x as f32, tower.y as f32, transform.translation.z);
+    }
+}
+
+fn update_visibility(mut query: Query<(&mut Visibility, &Sanctuary)>) {
+    for (mut sprite_visibility, sanctuary) in query.iter_mut() {
+        *sprite_visibility = if sanctuary.visibility { Visibility::Visible } else { Visibility::Hidden };
+    }
+}
+
+fn change_visibility_with_keybinding(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut query: Query<&mut Sanctuary>,
+) {
+    if keyboard_input.just_pressed(KeyCode::V) {
+        for mut sanctuary in query.iter_mut() {
+            sanctuary.visibility = !sanctuary.visibility;
+        }
+    }
+}
+
+fn update_collision_component(mut query: Query<(&mut CollisionComponent, &Sanctuary)>) {
+    for (mut collision_component, sanctuary) in query.iter_mut() {
+        collision_component.update_hitbox(sanctuary);
     }
 }
 

@@ -28,6 +28,14 @@ impl CollisionComponent {
     pub fn get_hitbox(&self) -> (i32, i32, i32, i32) {
         (self.x, self.y, self.w, self.h)
     }
+
+    pub fn update_hitbox(&mut self, component: &dyn Collisionable) {
+        let (x, y, w, h) = component.get_hitbox();
+        self.x = x;
+        self.y = y;
+        self.w = w;
+        self.h = h;
+    }
 }
 
 impl Collisionable for CollisionComponent {
@@ -39,7 +47,6 @@ impl Collisionable for CollisionComponent {
         (self.x, self.y, self.w, self.h)
     }
 }
-
 
 
 pub trait Collisionable {

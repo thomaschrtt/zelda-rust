@@ -19,7 +19,7 @@ pub fn setup(
 
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
-            scale : 0.3,
+            scale : 1.,
             ..OrthographicProjection::default()
         },
         ..Default::default()
@@ -52,8 +52,24 @@ pub fn zoom_camera(
 pub fn track_player(
     player_query: Query<&Transform, With<Player>>,
     mut camera: Query<(&mut Camera, &mut Transform), Without<Player>>,
+    mut camera_proj : Query<&mut OrthographicProjection, With<Camera>>,
 ) {
     let player_transform = player_query.single();
     let mut camera_transform = camera.single_mut().1;
-    camera_transform.translation = Vec3::new(player_transform.translation.x, player_transform.translation.y, camera_transform.translation.z);
+    let camera_projection = camera_proj.single_mut();
+
+    let camera_range = camera_projection.scale * WINDOW_SIZE / 2.;
+    
+    let x = player_transform.translation.x;
+    let y = player_transform.translation.y;
+
+    let camera_max_x = WINDOW_SIZE / 2. - camera_range;
+    let camera_min_x = -WINDOW_SIZE / 2. + camera_range;
+    let camera_max_y = WINDOW_SIZE / 2. - camera_range;
+    let camera_min_y = -WINDOW_SIZE / 2. + camera_range;
+
+    camera_transform.translation.x = if x > camera_max_x { camera_max_x } else if x < camera_min_x { camera_min_x } else { x };
+    camera_transform.translation.y = if y > camera_max_y { camera_max_y } else if y < camera_min_y { camera_min_y } else { y };
+    
+
 }

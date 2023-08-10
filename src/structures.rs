@@ -36,7 +36,7 @@ impl Collisionable for Sanctuary {
     }
 
     fn get_hitbox(&self) -> (i32, i32, i32, i32) {
-        (self.x, self.y, SANCTUARY_SIZE as i32, SANCTUARY_SIZE as i32)
+        (self.x, self.y, SANCTUARY_SIZE as i32 + 5, SANCTUARY_SIZE as i32 + 5)
     }
 }
 
@@ -51,7 +51,6 @@ pub struct Tower {
 
 impl Tower {
     pub fn new(x: i32, y: i32) -> Self {
-        let mut rng = rand::thread_rng();
         let mut sanctuaries: Vec<Sanctuary> = Vec::new();
         unsafe { sanctuaries.set_len(5) };
         Tower { x, y, sanctuaries}
@@ -65,7 +64,7 @@ impl Collisionable for Tower {
     }
 
     fn get_hitbox(&self) -> (i32, i32, i32, i32) {
-        (self.x, self.y, TOWER_SIZE as i32, TOWER_SIZE as i32)
+        (self.x, self.y, TOWER_WIDTH as i32, TOWER_HEIGHT as i32)
     }
 }   
 fn does_collide_with_existing(sanctuary: &Sanctuary, query: &Query<&CollisionComponent>, added_sanctuaries: &[CollisionComponent]) -> bool {
@@ -73,12 +72,12 @@ fn does_collide_with_existing(sanctuary: &Sanctuary, query: &Query<&CollisionCom
         || added_sanctuaries.iter().any(|added| sanctuary.would_collide_with(added))
 }
 
-fn setup_sanctuary(mut commands: &mut Commands, tower: &Tower, collision_query: &Query<&CollisionComponent>) {
+fn setup_sanctuary(commands: &mut Commands, tower: &Tower, collision_query: &Query<&CollisionComponent>) {
     let mut added_sanctuaries = Vec::new();
 
     for _ in 0..tower.sanctuaries.len() {
         let sanctuary = (0..10)
-            .map(|_| Sanctuary::new(75, 75))
+            .map(|_| Sanctuary::new_random_position())
             .find(|sanct| !does_collide_with_existing(sanct, &collision_query, &added_sanctuaries))
             .unwrap_or_else(Sanctuary::new_random_position);  // Use a default position if all attempts failed.
 
@@ -86,7 +85,7 @@ fn setup_sanctuary(mut commands: &mut Commands, tower: &Tower, collision_query: 
         added_sanctuaries.push(collision_component.clone());
 
         commands.spawn(SpriteBundle {
-            transform: Transform::from_xyz(sanctuary.x as f32, sanctuary.y as f32, 3.0),
+            transform: Transform::from_xyz(sanctuary.x as f32, sanctuary.y as f32, 2.0),
             sprite: Sprite {
                 custom_size: Some(Vec2::new(SANCTUARY_SIZE, SANCTUARY_SIZE)),
                 color: Color::rgb(0.0, 1.0, 0.0),
@@ -99,23 +98,31 @@ fn setup_sanctuary(mut commands: &mut Commands, tower: &Tower, collision_query: 
     }
 }
 
-pub fn setup_structures(mut commands: Commands, collision_query: Query<&CollisionComponent>) {
+pub fn setup_structures(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    collision_query: Query<&CollisionComponent>
+) {
+    let tower_texture_handle = asset_server.load("tower.png");
+
     let tower = Tower::new(100, 100);
     setup_sanctuary(&mut commands, &tower, &collision_query);
 
     // Setup tower
     let collisioncomponent = CollisionComponent::new_from_component(&tower);
     commands.spawn(SpriteBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 1.0),
+        transform: Transform::from_xyz(0.0, 0.0, 2.0),
         sprite: Sprite {
-            custom_size: Some(Vec2::new(TOWER_SIZE, TOWER_SIZE)),
+            custom_size: Some(Vec2::new(TOWER_WIDTH, TOWER_HEIGHT)),
             ..Default::default()
         },
+        texture: tower_texture_handle,
         ..Default::default()
     })
     .insert(tower)
     .insert(collisioncomponent);
 }
+
 
 fn remove_sanctuaries_colliding_with_tower(
     mut commands: Commands, 
@@ -123,7 +130,7 @@ fn remove_sanctuaries_colliding_with_tower(
     mut sanctuary_query: Query<(Entity, &Sanctuary, &CollisionComponent)>) 
     {
         for towers in tower.iter() {
-            for (entity, sanctuary, collision_component) in sanctuary_query.iter_mut() {
+            for (entity, _, collision_component) in sanctuary_query.iter_mut() {
                 if towers.would_collide_with(collision_component) {
                     commands.entity(entity).despawn();
                 }

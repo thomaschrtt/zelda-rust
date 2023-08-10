@@ -19,7 +19,7 @@ pub fn setup(
 
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
-            scale : 1.,
+            scale : 0.3,
             ..OrthographicProjection::default()
         },
         ..Default::default()

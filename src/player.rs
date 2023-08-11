@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::constants::*;
 use crate::collisions::*;
+use crate::structures::Tower;
 
 enum PlayerFacingDirection {
     Left,
@@ -14,7 +15,11 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player)
-            .add_systems(Update, (player_move, update_player_pos, player_facing_direction, update_player_sprite_moving));
+            .add_systems(Update, (player_move, 
+                                                    update_player_pos, 
+                                                    player_facing_direction, 
+                                                    update_player_sprite_moving,
+                                                    tower_detection));
     }
 }
 
@@ -69,7 +74,6 @@ fn player_move(
     let top_boundary = right_boundary;
     let bottom_boundary = left_boundary;
 
-    // Calculez les nouvelles positions potentielles.
     let new_x = if keyboard_input.pressed(KeyCode::Left) { player.x - player_speed }
                      else if keyboard_input.pressed(KeyCode::Right) { player.x + player_speed }
                      else { player.x };
@@ -88,7 +92,6 @@ fn player_move(
         return;
     }
 
-    // Si aucune collision n'est détectée, appliquez le mouvement.
     player.x = new_x;
     player.y = new_y;
 }
@@ -170,4 +173,26 @@ fn spawn_player(mut commands: Commands,
             ..Default::default()
         })
         .insert(player);
+}
+
+fn tower_detection(
+    mut player_query: Query<&mut Player>,
+    tower_query: Query<&Tower>,
+    collisionable_query: Query<&CollisionComponent>,
+    keyboard_input: Res<Input<KeyCode>>
+) {
+    let player = player_query.single_mut();
+    for tower in tower_query.iter() {
+        match player.facing_direction {
+            PlayerFacingDirection::Up => {
+                if player.would_collide(player.x, player.y + 1, &CollisionComponent::new_from_component(tower)) {
+                    if keyboard_input.just_pressed(KeyCode::Space) {
+                        println!("Tower detected!");
+                    }
+                }
+            }
+            _ => {}
+        }
+            
+    }
 }

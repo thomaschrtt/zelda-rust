@@ -12,7 +12,8 @@ impl Plugin for StructuresPlugin {
                                                     remove_sanctuaries_colliding_with_tower, 
                                                     update_visibility, 
                                                     change_visibility_with_keybinding, 
-                                                    update_collision_component, hide_all_sanctuaries.run_if(run_once())));
+                                                    update_collision_component, 
+                                                    hide_all_sanctuaries.run_if(run_once())));
     }
 }
 

@@ -32,10 +32,8 @@ impl Collisionable for Player {
     fn get_hitbox(&self) -> (i32, i32, i32, i32) {
         (self.x, self.y, (PLAYER_HITBOX_WIDTH * 0.8) as i32, (PLAYER_HITBOX_HEIGHT*0.8) as i32)
     }
+    
 }
-
-
-
 
 
 fn player_move(
@@ -43,6 +41,15 @@ fn player_move(
     mut player_query: Query<&mut Player>,
     collisionable_query: Query<&CollisionComponent>,
 ) {
+
+    let player_speed: i32;
+
+    if keyboard_input.pressed(KeyCode::ShiftLeft) {
+        player_speed = 2;
+
+    } else {
+        player_speed = 1;
+    }
 
     let mut player = player_query.single_mut();
 
@@ -52,12 +59,12 @@ fn player_move(
     let bottom_boundary = left_boundary;
 
     // Calculez les nouvelles positions potentielles.
-    let new_x = if keyboard_input.pressed(KeyCode::Left) { player.x - PLAYER_SPEED }
-                     else if keyboard_input.pressed(KeyCode::Right) { player.x + PLAYER_SPEED }
+    let new_x = if keyboard_input.pressed(KeyCode::Left) { player.x - player_speed }
+                     else if keyboard_input.pressed(KeyCode::Right) { player.x + player_speed }
                      else { player.x };
 
-    let new_y = if keyboard_input.pressed(KeyCode::Down) { player.y - PLAYER_SPEED }
-                     else if keyboard_input.pressed(KeyCode::Up) { player.y + PLAYER_SPEED }
+    let new_y = if keyboard_input.pressed(KeyCode::Down) { player.y - player_speed }
+                     else if keyboard_input.pressed(KeyCode::Up) { player.y + player_speed }
                      else { player.y };
 
 

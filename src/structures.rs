@@ -12,7 +12,7 @@ impl Plugin for StructuresPlugin {
                                                     remove_sanctuaries_colliding_with_tower, 
                                                     update_visibility, 
                                                     change_visibility_with_keybinding, 
-                                                    update_collision_component));
+                                                    update_collision_component, hide_all_sanctuaries.run_if(run_once())));
     }
 }
 
@@ -25,7 +25,7 @@ pub struct Sanctuary {
 
 impl Sanctuary {
     pub fn new(x: i32, y: i32) -> Self {
-        Sanctuary { x, y, visibility: false }
+        Sanctuary { x, y, visibility: true }
     }
     pub fn new_random_position() -> Self {
         let mut rng = rand::thread_rng();
@@ -60,8 +60,7 @@ pub struct Tower {
 
 impl Tower {
     pub fn new(x: i32, y: i32) -> Self {
-        let mut sanctuaries: Vec<Sanctuary> = Vec::new();
-        unsafe { sanctuaries.set_len(5) };
+        let sanctuaries: Vec<Sanctuary> = Vec::new();
         Tower { x, y, sanctuaries}
     }
 
@@ -81,30 +80,30 @@ fn does_collide_with_existing(sanctuary: &Sanctuary, query: &Query<&CollisionCom
         || added_sanctuaries.iter().any(|added| sanctuary.would_collide_with(added))
 }
 
-fn setup_sanctuary(commands: &mut Commands, tower: &Tower, collision_query: &Query<&CollisionComponent>) {
+fn setup_sanctuary(commands: &mut Commands, collision_query: &Query<&CollisionComponent>) {
     let mut added_sanctuaries = Vec::new();
 
-    for _ in 0..tower.sanctuaries.len() {
-        let sanctuary = (0..10)
+    for _ in 0..5 {
+        if let Some(sanctuary) = (0..10)
             .map(|_| Sanctuary::new_random_position())
-            .find(|sanct| !does_collide_with_existing(sanct, &collision_query, &added_sanctuaries))
-            .unwrap_or_else(Sanctuary::new_random_position);  // Use a default position if all attempts failed.
+            .find(|sanct| !does_collide_with_existing(sanct, &collision_query, &added_sanctuaries)){
 
-        let collision_component = CollisionComponent::new_from_component(&sanctuary);
-        added_sanctuaries.push(collision_component.clone());
+            let collision_component = CollisionComponent::new_from_component(&sanctuary);
+            added_sanctuaries.push(collision_component.clone());
 
-        commands.spawn(SpriteBundle {
-            transform: Transform::from_xyz(sanctuary.x as f32, sanctuary.y as f32, 2.0),
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(SANCTUARY_SIZE, SANCTUARY_SIZE)),
-                color: Color::rgb(0.0, 1.0, 0.0),
+            commands.spawn(SpriteBundle {
+                transform: Transform::from_xyz(sanctuary.x as f32, sanctuary.y as f32, 2.0),
+                sprite: Sprite {
+                    custom_size: Some(Vec2::new(SANCTUARY_SIZE, SANCTUARY_SIZE)),
+                    color: Color::rgb(0.0, 1.0, 0.0),
+                    ..Default::default()
+                },
                 ..Default::default()
-            },
-            ..Default::default()
-        })
-        .insert(collision_component)
-        .insert(sanctuary);
-    }
+            })
+            .insert(collision_component)
+            .insert(sanctuary);
+        }
+    }   
 }
 
 pub fn setup_structures(
@@ -115,7 +114,7 @@ pub fn setup_structures(
     let tower_texture_handle = asset_server.load("tower.png");
 
     let tower = Tower::new(100, 100);
-    setup_sanctuary(&mut commands, &tower, &collision_query);
+    setup_sanctuary(&mut commands, &collision_query);
 
     // Setup tower
     let collisioncomponent = CollisionComponent::new_from_component(&tower);
@@ -130,6 +129,7 @@ pub fn setup_structures(
     })
     .insert(tower)
     .insert(collisioncomponent);
+
 }
 
 
@@ -176,4 +176,8 @@ fn update_collision_component(mut query: Query<(&mut CollisionComponent, &Sanctu
     }
 }
 
-
+fn hide_all_sanctuaries(mut query: Query<&mut Sanctuary>) {
+    for mut sanctuary in query.iter_mut() {
+        sanctuary.visibility = false;
+    }
+}

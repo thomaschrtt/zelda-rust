@@ -91,6 +91,7 @@ pub trait Collisionable {
         let (x, y, w, h) = self.get_hitbox();
         CollisionComponent::new(x, y, w, h)
     }
+    
 }
 
 fn get_position_from_center_to_corner(x: i32, y: i32, w: i32, h: i32) -> (i32, i32) {

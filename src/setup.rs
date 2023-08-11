@@ -41,10 +41,10 @@ pub fn zoom_camera(
     keyboard_input: Res<Input<KeyCode>>,
 ) {
     let mut transform = query.single_mut();
-    if keyboard_input.pressed(KeyCode::S) && transform.scale < 1. {
+    if keyboard_input.pressed(KeyCode::S) && transform.scale < CAMERA_MAX_SCALE {
         transform.scale = transform.scale + 0.01;
     }
-    if keyboard_input.pressed(KeyCode::Z) && transform.scale > 0.1{
+    if keyboard_input.pressed(KeyCode::Z) && transform.scale > CAMERA_MIN_SCALE{
         transform.scale = transform.scale - 0.01;
     }
 }
@@ -63,10 +63,10 @@ pub fn track_player(
     let x = player_transform.translation.x;
     let y = player_transform.translation.y;
 
-    let camera_max_x = WINDOW_SIZE / 2. - camera_range;
-    let camera_min_x = -WINDOW_SIZE / 2. + camera_range;
-    let camera_max_y = WINDOW_SIZE / 2. - camera_range;
-    let camera_min_y = -WINDOW_SIZE / 2. + camera_range;
+    let camera_max_x = MAP_SIZE / 2. - camera_range;
+    let camera_min_x = -MAP_SIZE / 2. + camera_range;
+    let camera_max_y = MAP_SIZE / 2. - camera_range;
+    let camera_min_y = -MAP_SIZE / 2. + camera_range;
 
     camera_transform.translation.x = if x > camera_max_x { camera_max_x } else if x < camera_min_x { camera_min_x } else { x };
     camera_transform.translation.y = if y > camera_max_y { camera_max_y } else if y < camera_min_y { camera_min_y } else { y };

@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use crate::constants::*;
 use crate::collisions::*;
-use crate::structures::Tower;
+use crate::structures;
+use crate::structures::*;
 
 enum PlayerFacingDirection {
     Left,
@@ -19,7 +20,8 @@ impl Plugin for PlayerPlugin {
                                                     update_player_pos, 
                                                     player_facing_direction, 
                                                     update_player_sprite_moving,
-                                                    tower_detection));
+                                                    tower_detection,
+                                                    sanctuary_detection));
     }
 }
 
@@ -69,7 +71,7 @@ fn player_move(
     }
 
 
-    let left_boundary = -((WINDOW_SIZE / 2.0) - (PLAYER_HITBOX_WIDTH / 2.)) as i32;
+    let left_boundary = -((MAP_SIZE / 2.0) - (PLAYER_HITBOX_WIDTH / 2.)) as i32;
     let right_boundary = -left_boundary;
     let top_boundary = right_boundary;
     let bottom_boundary = left_boundary;
@@ -174,25 +176,65 @@ fn spawn_player(mut commands: Commands,
         })
         .insert(player);
 }
+enum InteractionType {
+    Tower,
+    Sanctuary,
+}
+fn can_interact_with(
+    player: &Player,
+    interaction_type: &InteractionType,
+    x: i32,
+    y: i32,
+    tower: Option<&Tower>,
+    sanctuary: Option<&Sanctuary>,
+) -> bool {
+    match interaction_type {
+        InteractionType::Tower => {
+            if let Some(t) = tower {
+                player.would_collide(x, y, &CollisionComponent::new_from_component(t))
+            } else {
+                false
+            }
+        }
+        InteractionType::Sanctuary => {
+            if let Some(s) = sanctuary {
+                player.would_collide(x, y, &CollisionComponent::new_from_component(s))
+            } else {
+                false
+            }
+        }
+    }
+}
 
 fn tower_detection(
     mut player_query: Query<&mut Player>,
     tower_query: Query<&Tower>,
-    collisionable_query: Query<&CollisionComponent>,
-    keyboard_input: Res<Input<KeyCode>>
+    keyboard_input: Res<Input<KeyCode>>,
+    query_sanctuary: Query<&mut Sanctuary>,
 ) {
     let player = player_query.single_mut();
     for tower in tower_query.iter() {
-        match player.facing_direction {
-            PlayerFacingDirection::Up => {
-                if player.would_collide(player.x, player.y + 1, &CollisionComponent::new_from_component(tower)) {
-                    if keyboard_input.just_pressed(KeyCode::Space) {
-                        println!("Tower detected!");
-                    }
-                }
+        if can_interact_with(&player, &InteractionType::Tower, player.x, player.y + 1, Some(tower), None) {
+            if keyboard_input.just_pressed(KeyCode::Space) {
+                structures::show_one_sanctuary(query_sanctuary);
+                break;
             }
-            _ => {}
         }
-            
+    }
+}
+
+fn sanctuary_detection(
+    mut player_query: Query<&mut Player>,
+    mut sanctuary_query: Query<&mut Sanctuary>,
+    keyboard_input: Res<Input<KeyCode>>,
+) {
+    let player = player_query.single_mut();
+    for mut sanctuary in sanctuary_query.iter_mut() {
+        if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1, None, Some(&sanctuary)) {
+            if keyboard_input.just_pressed(KeyCode::Space) {
+                sanctuary.unlock();
+                break;
+            }
+        }
     }
 }

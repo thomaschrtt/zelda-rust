@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use crate::constants::*;
 use crate::collisions::*;
-use crate::structures::Tower;
+use crate::structures;
+use crate::structures::*;
 
 enum PlayerFacingDirection {
     Left,
@@ -179,7 +180,8 @@ fn tower_detection(
     mut player_query: Query<&mut Player>,
     tower_query: Query<&Tower>,
     collisionable_query: Query<&CollisionComponent>,
-    keyboard_input: Res<Input<KeyCode>>
+    keyboard_input: Res<Input<KeyCode>>,
+    mut query_sanctuary: Query<&mut Sanctuary>,
 ) {
     let player = player_query.single_mut();
     for tower in tower_query.iter() {
@@ -187,7 +189,8 @@ fn tower_detection(
             PlayerFacingDirection::Up => {
                 if player.would_collide(player.x, player.y + 1, &CollisionComponent::new_from_component(tower)) {
                     if keyboard_input.just_pressed(KeyCode::Space) {
-                        println!("Tower detected!");
+                        structures::show_one_sanctuary(query_sanctuary);
+                        break;
                     }
                 }
             }

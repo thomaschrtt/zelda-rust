@@ -182,3 +182,26 @@ fn hide_all_sanctuaries(mut query: Query<&mut Sanctuary>) {
         sanctuary.visibility = false;
     }
 }
+pub fn show_one_sanctuary(mut query: Query<&mut Sanctuary>) {
+    if are_all_visible_sanctuaries_unlocked(&query) {
+        println!("All sanctuaries are unlocked");
+        return;
+    }
+
+    let mut rng = rand::thread_rng();
+    let mut sanctuaries: Vec<_> = query.iter_mut().filter(|sanctuary| !sanctuary.visibility).collect();
+    let len = sanctuaries.len();
+
+    if len > 0 {
+        let sanctuary = &mut sanctuaries[rng.gen_range(0..len)];
+        sanctuary.visibility = true;
+    } else {
+        println!("Pas de sanctuaire trouvé");
+}
+
+}
+
+pub fn are_all_visible_sanctuaries_unlocked(query: &Query<&mut Sanctuary>) -> bool {
+    query.iter().all(|sanctuary| sanctuary.visibility)
+}
+

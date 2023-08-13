@@ -19,6 +19,30 @@ impl Plugin for StructuresPlugin {
 }
 
 #[derive(Component, Clone)]
+pub struct Tower {
+    x: i32,
+    y: i32,
+}
+
+
+impl Tower {
+    pub fn new(x: i32, y: i32) -> Self {
+        Tower { x, y}
+    }
+
+}
+
+impl Collisionable for Tower {
+    fn get_pos(&self) -> (i32, i32) {
+        (self.x, self.y)
+    }
+
+    fn get_hitbox(&self) -> (i32, i32, i32, i32) {
+        (self.x, self.y, TOWER_WIDTH as i32, TOWER_HEIGHT as i32)
+    }
+}  
+
+#[derive(Component, Clone)]
 pub struct Sanctuary {
     x: i32,
     y: i32,
@@ -49,6 +73,14 @@ impl Sanctuary {
         println!("Sanctuaire débloqué");
         self.unlocked = true;
     }
+
+    pub fn is_visible(&self) -> bool {
+        self.visibility
+    }
+
+    pub fn is_unlocked(&self) -> bool {
+        self.unlocked
+    }
 }
 
 impl Collisionable for Sanctuary {
@@ -65,30 +97,6 @@ impl Collisionable for Sanctuary {
     }
 }
 
-
-#[derive(Component, Clone)]
-pub struct Tower {
-    x: i32,
-    y: i32,
-}
-
-
-impl Tower {
-    pub fn new(x: i32, y: i32) -> Self {
-        Tower { x, y}
-    }
-
-}
-
-impl Collisionable for Tower {
-    fn get_pos(&self) -> (i32, i32) {
-        (self.x, self.y)
-    }
-
-    fn get_hitbox(&self) -> (i32, i32, i32, i32) {
-        (self.x, self.y, TOWER_WIDTH as i32, TOWER_HEIGHT as i32)
-    }
-}   
 fn does_collide_with_existing(sanctuary: &Sanctuary, query: &Query<&CollisionComponent>, added_sanctuaries: &[CollisionComponent]) -> bool {
     query.iter().any(|existing| sanctuary.would_collide_with(existing))
         || added_sanctuaries.iter().any(|added| sanctuary.would_collide_with(added))

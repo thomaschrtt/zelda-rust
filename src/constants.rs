@@ -2,6 +2,7 @@
 pub const WINDOW_SIZE: f32 = 600.;
 pub const MAP_SIZE: f32 = 600.;
 pub const CAMERA_DEFAULT_SCALE: f32 = 0.3;
+pub const CAMERA_DEFAULT_SIZE: f32 = WINDOW_SIZE * CAMERA_DEFAULT_SCALE;
 pub const CAMERA_MIN_SCALE: f32 = 0.1;
 pub const CAMERA_MAX_SCALE: f32 = 1.;
 

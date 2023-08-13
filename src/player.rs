@@ -168,7 +168,7 @@ fn spawn_player(mut commands: Commands,
             texture_atlas: texture_atlas_handle.clone(),
             transform: Transform {
                 translation: Vec3::new(0., 0., 1.),
-                scale: Vec3::new(PLAYER_SPRITE_SCALE, PLAYER_SPRITE_SCALE, 1.),
+                scale: Vec3::new(PLAYER_SPRITE_SCALE, PLAYER_SPRITE_SCALE, Z_LAYER_PLAYER),
                 ..Transform::default()
             },
             sprite: TextureAtlasSprite::new(0),
@@ -230,7 +230,10 @@ fn sanctuary_detection(
 ) {
     let player = player_query.single_mut();
     for mut sanctuary in sanctuary_query.iter_mut() {
-        if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1, None, Some(&sanctuary)) {
+        if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1, None, Some(&sanctuary)) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y - 1, None, Some(&sanctuary)) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x + 1, player.y, None, Some(&sanctuary)) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x - 1, player.y, None, Some(&sanctuary)) {
             if keyboard_input.just_pressed(KeyCode::Space) {
                 sanctuary.unlock();
                 break;

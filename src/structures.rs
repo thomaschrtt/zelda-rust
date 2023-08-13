@@ -103,7 +103,7 @@ fn does_collide_with_existing(sanctuary: &Sanctuary, query: &Query<&CollisionCom
 }
 
 fn setup_sanctuary(
-    mut commands: &mut Commands, 
+    commands: &mut Commands, 
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     collision_query: &Query<&CollisionComponent>
@@ -115,7 +115,7 @@ fn setup_sanctuary(
 
     let mut added_sanctuaries = Vec::new();
 
-    for _ in 0..5 {
+    for _ in 0..SANCTUARY_NB {
         if let Some(sanctuary) = (0..10)
             .map(|_| Sanctuary::new_random_position())
             .find(|sanct| !does_collide_with_existing(sanct, &collision_query, &added_sanctuaries)) {
@@ -125,7 +125,7 @@ fn setup_sanctuary(
 
             commands.spawn(SpriteSheetBundle {
                 texture_atlas: texture_atlas_handle.clone(),
-                transform: Transform::from_xyz(sanctuary.x as f32, sanctuary.y as f32, 2.0),
+                transform: Transform::from_xyz(sanctuary.x as f32, sanctuary.y as f32, Z_LAYER_STRUCTURES),
                 sprite: TextureAtlasSprite { index: 0, ..Default::default() }, // Use the first texture (red one)
                 ..Default::default()
             })
@@ -140,7 +140,7 @@ pub fn setup_structures(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     collision_query: Query<&CollisionComponent>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     let tower_texture_handle = asset_server.load("tower.png");
 
@@ -150,7 +150,7 @@ pub fn setup_structures(
     // Setup tower
     let collisioncomponent = CollisionComponent::new_from_component(&tower);
     commands.spawn(SpriteBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 2.0),
+        transform: Transform::from_xyz(0.0, 0.0, Z_LAYER_STRUCTURES),
         sprite: Sprite {
             custom_size: Some(Vec2::new(TOWER_WIDTH, TOWER_HEIGHT)),
             ..Default::default()

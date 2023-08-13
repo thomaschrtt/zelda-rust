@@ -1,12 +1,5 @@
 use bevy::prelude::*;
 
-pub struct CollisionPlugin;
-
-impl Plugin for CollisionPlugin {
-    fn build(&self, app: &mut App) {
-    }
-}
-
 #[derive(Component, Clone)]
 pub struct CollisionComponent {
     x: i32,

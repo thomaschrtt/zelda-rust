@@ -41,11 +41,8 @@ impl Plugin for PlayerPlugin {
 pub struct Player {
     x: f32,
     y: f32,
-    x: f32,
-    y: f32,
     facing_direction: PlayerFacingDirection,
     sprinting: bool,
-    health: i32,
     health: i32,
 }
 
@@ -73,12 +70,8 @@ impl Player {
 
 impl Collisionable for Player {
     fn get_pos(&self) -> (f32, f32) {
-    fn get_pos(&self) -> (f32, f32) {
         (self.x, self.y)
     }
-
-    fn get_hitbox(&self) -> (f32, f32, f32, f32) {
-        (self.x, self.y, PLAYER_HITBOX_WIDTH * 0.8, PLAYER_HITBOX_HEIGHT*0.8)
     fn get_hitbox(&self) -> (f32, f32, f32, f32) {
         (self.x, self.y, PLAYER_HITBOX_WIDTH * 0.8, PLAYER_HITBOX_HEIGHT*0.8)
     }
@@ -92,24 +85,17 @@ fn player_move(
     collisionable_query: Query<&CollisionComponent, Without<Ennemy>>,
     mut ennemy_query: Query<(&CollisionComponent, &mut Ennemy), With<Ennemy>>
 ) {
-
-    let player_speed: f32;
     let player_speed: f32;
     let mut player = player_query.single_mut();
 
     if keyboard_input.pressed(KeyCode::ShiftLeft) {
         player.sprinting = true;
         player_speed = PLAYER_SPRINT_SPEED;
-        player_speed = PLAYER_SPRINT_SPEED;
 
     } else {
         player.sprinting = false;
         player_speed = PLAYER_NORMAL_SPEED;
-        player_speed = PLAYER_NORMAL_SPEED;
     }
-
-
-    let left_boundary = -((MAP_SIZE / 2.0) - (PLAYER_HITBOX_WIDTH / 2.));
     let left_boundary = -((MAP_SIZE / 2.0) - (PLAYER_HITBOX_WIDTH / 2.));
     let right_boundary = -left_boundary;
     let top_boundary = right_boundary;
@@ -305,8 +291,6 @@ fn can_interact_with(
     interaction_type: &InteractionType,
     x: f32,
     y: f32,
-    x: f32,
-    y: f32,
     tower: Option<&Tower>,
     sanctuary: Option<&Sanctuary>,
 ) -> bool {
@@ -337,7 +321,6 @@ fn tower_detection(
     let player = player_query.single_mut();
     for tower in tower_query.iter() {
         if can_interact_with(&player, &InteractionType::Tower, player.x, player.y + 1., Some(tower), None) {
-        if can_interact_with(&player, &InteractionType::Tower, player.x, player.y + 1., Some(tower), None) {
             if keyboard_input.just_pressed(KeyCode::Space) {
                 structures::show_one_sanctuary(query_sanctuary);
                 break;
@@ -353,10 +336,6 @@ fn sanctuary_detection(
 ) {
     let player = player_query.single_mut();
     for mut sanctuary in sanctuary_query.iter_mut() {
-        if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1., None, Some(&sanctuary)) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y - 1., None, Some(&sanctuary)) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x + 1., player.y, None, Some(&sanctuary)) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x - 1., player.y, None, Some(&sanctuary)) {
         if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1., None, Some(&sanctuary)) ||
             can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y - 1., None, Some(&sanctuary)) ||
             can_interact_with(&player, &InteractionType::Sanctuary, player.x + 1., player.y, None, Some(&sanctuary)) ||

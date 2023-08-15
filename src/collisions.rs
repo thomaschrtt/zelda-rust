@@ -2,14 +2,14 @@ use bevy::prelude::*;
 
 #[derive(Component, Clone)]
 pub struct CollisionComponent {
-    x: i32,
-    y: i32,
-    w: i32,
-    h: i32,
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
 }
 
 impl CollisionComponent {
-    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
+    pub fn new(x: f32, y: f32, w: f32, h: f32) -> Self {
         CollisionComponent { x, y, w, h }
     }
 
@@ -18,7 +18,7 @@ impl CollisionComponent {
         CollisionComponent::new(x, y, w, h)
     }
 
-    pub fn get_hitbox(&self) -> (i32, i32, i32, i32) {
+    pub fn get_hitbox(&self) -> (f32, f32, f32, f32) {
         (self.x, self.y, self.w, self.h)
     }
 
@@ -29,24 +29,29 @@ impl CollisionComponent {
         self.w = w;
         self.h = h;
     }
+
+    pub fn set_pos(&mut self, x: f32, y: f32) {
+        self.x = x;
+        self.y = y;
+    }
 }
 
 impl Collisionable for CollisionComponent {
-    fn get_pos(&self) -> (i32, i32) {
+    fn get_pos(&self) -> (f32, f32) {
         (self.x, self.y)
     }
 
-    fn get_hitbox(&self) -> (i32, i32, i32, i32) {
+    fn get_hitbox(&self) -> (f32, f32, f32, f32) {
         (self.x, self.y, self.w, self.h)
     }
 }
 
 
 pub trait Collisionable {
-    fn get_pos(&self) -> (i32, i32);
-    fn get_hitbox(&self) -> (i32, i32, i32, i32);
+    fn get_pos(&self) -> (f32, f32);
+    fn get_hitbox(&self) -> (f32, f32, f32, f32);
 
-    fn would_collide(&self, x: i32, y:i32, other: &CollisionComponent) -> bool {
+    fn would_collide(&self, x: f32, y:f32, other: &CollisionComponent) -> bool {
         let (x1, y1, w1, h1) = (x, y, self.get_hitbox().2, self.get_hitbox().3);
         let (x2, y2, w2, h2) = other.get_hitbox();
 
@@ -55,7 +60,7 @@ pub trait Collisionable {
     }
 
     fn would_collide_with(&self, other: &dyn Collisionable) -> bool {
-        let self_pos: (i32, i32) = self.get_pos();
+        let self_pos: (f32, f32) = self.get_pos();
         self.would_collide(self_pos.0, self_pos.1, &other.get_collision_component())
     }
 
@@ -66,12 +71,12 @@ pub trait Collisionable {
     
 }
 
-pub fn get_position_from_center_to_corner(x: i32, y: i32, w: i32, h: i32) -> (i32, i32) {
-    (x - w/2, y - h/2)
+pub fn get_position_from_center_to_corner(x: f32, y: f32, w: f32, h: f32) -> (f32, f32) {
+    (x - w/2., y - h/2.)
 }
 
-pub fn are_overlapping(x1: i32, y1: i32, w1: i32, h1: i32, 
-                       x2: i32, y2: i32, w2: i32, h2: i32) -> bool {
+pub fn are_overlapping(x1: f32, y1: f32, w1: f32, h1: f32, 
+                       x2: f32, y2: f32, w2: f32, h2: f32) -> bool {
     let (x1, y1) = get_position_from_center_to_corner(x1, y1, w1, h1);
     let (x2, y2) = get_position_from_center_to_corner(x2, y2, w2, h2);
 

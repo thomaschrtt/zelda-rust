@@ -55,7 +55,7 @@ fn update_gui_pos(mut query: Query<&mut GUI>,
     let mut gui = query.single_mut();
 
     let camera_pos = camera_pos.single();
-    let camera_pos = (camera_pos.translation.x as i32, camera_pos.translation.y as i32);
+    let camera_pos = (camera_pos.translation.x, camera_pos.translation.y);
 
     let sanct_pos: Vec<&Sanctuary> = visible_sanctuary_query.iter()
     .filter(|sanctuary| sanctuary.is_visible() && !sanctuary.is_unlocked())
@@ -75,12 +75,12 @@ fn update_gui_pos(mut query: Query<&mut GUI>,
     gui.y = y;
 }
 
-fn is_sanct_visible(sanct_x: i32, sanct_y: i32, cam_x: i32, cam_y: i32) -> bool {
-    collisions::are_overlapping(sanct_x, sanct_y, SANCTUARY_WIDTH as i32, SANCTUARY_HEIGHT as i32, 
-                             cam_x, cam_y, CAMERA_DEFAULT_SIZE as i32, CAMERA_DEFAULT_SIZE as i32)
+fn is_sanct_visible(sanct_x: f32, sanct_y: f32, cam_x: f32, cam_y: f32) -> bool {
+    collisions::are_overlapping(sanct_x, sanct_y, SANCTUARY_WIDTH, SANCTUARY_HEIGHT, 
+                             cam_x, cam_y, CAMERA_DEFAULT_SIZE, CAMERA_DEFAULT_SIZE)
 }
 
-fn get_gui_pos(sanct_post_x: i32, sanct_post_y: i32, cam_x: i32, cam_y: i32) -> (f32, f32) {
+fn get_gui_pos(sanct_post_x: f32, sanct_post_y: f32, cam_x: f32, cam_y: f32) -> (f32, f32) {
     let pos_x_border = CAMERA_DEFAULT_SIZE/2.;
     let pos_y_border = pos_x_border;
     let neg_x_border = -pos_x_border;

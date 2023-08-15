@@ -20,45 +20,45 @@ impl Plugin for StructuresPlugin {
 
 #[derive(Component, Clone)]
 pub struct Tower {
-    x: i32,
-    y: i32,
+    x: f32,
+    y: f32,
 }
 
 
 impl Tower {
-    pub fn new(x: i32, y: i32) -> Self {
+    pub fn new(x: f32, y: f32) -> Self {
         Tower { x, y}
     }
 
 }
 
 impl Collisionable for Tower {
-    fn get_pos(&self) -> (i32, i32) {
+    fn get_pos(&self) -> (f32, f32) {
         (self.x, self.y)
     }
 
-    fn get_hitbox(&self) -> (i32, i32, i32, i32) {
-        (self.x, self.y, TOWER_WIDTH as i32, TOWER_HEIGHT as i32)
+    fn get_hitbox(&self) -> (f32, f32, f32, f32) {
+        (self.x, self.y, TOWER_WIDTH, TOWER_HEIGHT)
     }
 }  
 
 #[derive(Component, Clone)]
 pub struct Sanctuary {
-    x: i32,
-    y: i32,
+    x: f32,
+    y: f32,
     visibility: bool,
     unlocked: bool,
 }
 
 impl Sanctuary {
-    pub fn new(x: i32, y: i32) -> Self {
+    pub fn new(x: f32, y: f32) -> Self {
         Sanctuary { x, y, visibility: true, unlocked: false }
     }
     pub fn new_random_position() -> Self {
         let mut rng = rand::thread_rng();
 
-        let max_value_x = (MAP_SIZE / 2. - SANCTUARY_WIDTH / 2.) as i32;
-        let max_value_y = (MAP_SIZE / 2. - SANCTUARY_HEIGHT / 2.) as i32;
+        let max_value_x = MAP_SIZE / 2. - SANCTUARY_WIDTH / 2.;
+        let max_value_y = MAP_SIZE / 2. - SANCTUARY_HEIGHT / 2.;
 
         let x = rng.gen_range(-max_value_x..max_value_x);
         let y = rng.gen_range(-max_value_y..max_value_y);
@@ -84,15 +84,15 @@ impl Sanctuary {
 }
 
 impl Collisionable for Sanctuary {
-    fn get_pos(&self) -> (i32, i32) {
+    fn get_pos(&self) -> (f32, f32) {
         (self.x, self.y)
     }
 
-    fn get_hitbox(&self) -> (i32, i32, i32, i32) {
+    fn get_hitbox(&self) -> (f32, f32, f32, f32) {
         if self.visibility {
-            (self.x, self.y, SANCTUARY_WIDTH as i32, SANCTUARY_HEIGHT as i32)
+            (self.x, self.y, SANCTUARY_WIDTH, SANCTUARY_HEIGHT)
         } else {
-            (-1000, -1000, 0, 0)
+            (-1000., -1000., 0., 0.)
         }
     }
 }
@@ -144,7 +144,7 @@ pub fn setup_structures(
 ) {
     let tower_texture_handle = asset_server.load("tower.png");
 
-    let tower = Tower::new(100, 100);
+    let tower = Tower::new(100., 100.);
     setup_sanctuary(&mut commands, asset_server, texture_atlases, &collision_query);
 
     // Setup tower

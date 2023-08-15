@@ -31,25 +31,26 @@ impl Plugin for PlayerPlugin {
 
 #[derive(Component)]
 pub struct Player {
-    x: i32,
-    y: i32,
+    x: f32,
+    y: f32,
     facing_direction: PlayerFacingDirection,
     sprinting: bool,
+    health: i32,
 }
 
 impl Player {
     pub fn new() -> Self {
-        Self { x: 0, y: 0, facing_direction: PlayerFacingDirection::Right, sprinting:false }
+        Self { x: 0., y: 0., facing_direction: PlayerFacingDirection::Right, sprinting:false, health: 20 }
     }
 }
 
 impl Collisionable for Player {
-    fn get_pos(&self) -> (i32, i32) {
+    fn get_pos(&self) -> (f32, f32) {
         (self.x, self.y)
     }
 
-    fn get_hitbox(&self) -> (i32, i32, i32, i32) {
-        (self.x, self.y, (PLAYER_HITBOX_WIDTH * 0.8) as i32, (PLAYER_HITBOX_HEIGHT*0.8) as i32)
+    fn get_hitbox(&self) -> (f32, f32, f32, f32) {
+        (self.x, self.y, PLAYER_HITBOX_WIDTH * 0.8, PLAYER_HITBOX_HEIGHT*0.8)
     }
     
 }
@@ -61,20 +62,20 @@ fn player_move(
     collisionable_query: Query<&CollisionComponent>,
 ) {
 
-    let player_speed: i32;
+    let player_speed: f32;
     let mut player = player_query.single_mut();
 
     if keyboard_input.pressed(KeyCode::ShiftLeft) {
         player.sprinting = true;
-        player_speed = 2;
+        player_speed = PLAYER_SPRINT_SPEED;
 
     } else {
         player.sprinting = false;
-        player_speed = 1;
+        player_speed = PLAYER_NORMAL_SPEED;
     }
 
 
-    let left_boundary = -((MAP_SIZE / 2.0) - (PLAYER_HITBOX_WIDTH / 2.)) as i32;
+    let left_boundary = -((MAP_SIZE / 2.0) - (PLAYER_HITBOX_WIDTH / 2.));
     let right_boundary = -left_boundary;
     let top_boundary = right_boundary;
     let bottom_boundary = left_boundary;
@@ -186,8 +187,8 @@ enum InteractionType {
 fn can_interact_with(
     player: &Player,
     interaction_type: &InteractionType,
-    x: i32,
-    y: i32,
+    x: f32,
+    y: f32,
     tower: Option<&Tower>,
     sanctuary: Option<&Sanctuary>,
 ) -> bool {
@@ -217,7 +218,7 @@ fn tower_detection(
 ) {
     let player = player_query.single_mut();
     for tower in tower_query.iter() {
-        if can_interact_with(&player, &InteractionType::Tower, player.x, player.y + 1, Some(tower), None) {
+        if can_interact_with(&player, &InteractionType::Tower, player.x, player.y + 1., Some(tower), None) {
             if keyboard_input.just_pressed(KeyCode::Space) {
                 structures::show_one_sanctuary(query_sanctuary);
                 break;
@@ -233,10 +234,10 @@ fn sanctuary_detection(
 ) {
     let player = player_query.single_mut();
     for mut sanctuary in sanctuary_query.iter_mut() {
-        if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1, None, Some(&sanctuary)) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y - 1, None, Some(&sanctuary)) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x + 1, player.y, None, Some(&sanctuary)) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x - 1, player.y, None, Some(&sanctuary)) {
+        if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1., None, Some(&sanctuary)) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y - 1., None, Some(&sanctuary)) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x + 1., player.y, None, Some(&sanctuary)) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x - 1., player.y, None, Some(&sanctuary)) {
             if keyboard_input.just_pressed(KeyCode::Space) {
                 sanctuary.unlock();
                 break;
@@ -251,7 +252,7 @@ fn tree_transparency(
 ) {
     let player = player_query.single();
     for (mut sprite, transform) in tree_query.iter_mut() {
-        if collisions::are_overlapping(player.x, player.y, PLAYER_HITBOX_WIDTH as i32, PLAYER_HITBOX_HEIGHT as i32, transform.translation.x as i32, transform.translation.y as i32, (TREE_WIDTH*0.6) as i32, (TREE_HEIGHT*0.6) as i32) {
+        if collisions::are_overlapping(player.x, player.y, PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT, transform.translation.x, transform.translation.y, TREE_WIDTH*0.6, TREE_HEIGHT*0.6) {
             sprite.color.set_a(0.50);
         } else {
             sprite.color.set_a(1.0);

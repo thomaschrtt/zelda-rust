@@ -1,8 +1,10 @@
 use bevy::prelude::*;
+use crate::collisions;
 use crate::constants::*;
 use crate::collisions::*;
 use crate::structures;
 use crate::structures::*;
+use crate::setup::*;
 
 enum PlayerFacingDirection {
     Left,
@@ -21,7 +23,8 @@ impl Plugin for PlayerPlugin {
                                                     player_facing_direction, 
                                                     update_player_sprite_moving,
                                                     tower_detection,
-                                                    sanctuary_detection));
+                                                    sanctuary_detection,
+                                                    tree_transparency));
     }
 }
 
@@ -242,3 +245,16 @@ fn sanctuary_detection(
     }
 }
 
+fn tree_transparency(
+    player_query: Query<&Player>,
+    mut tree_query: Query<(&mut TextureAtlasSprite, &Transform), With<Tree>>,
+) {
+    let player = player_query.single();
+    for (mut sprite, transform) in tree_query.iter_mut() {
+        if collisions::are_overlapping(player.x, player.y, PLAYER_HITBOX_WIDTH as i32, PLAYER_HITBOX_HEIGHT as i32, transform.translation.x as i32, transform.translation.y as i32, (TREE_WIDTH*0.6) as i32, (TREE_HEIGHT*0.6) as i32) {
+            sprite.color.set_a(0.50);
+        } else {
+            sprite.color.set_a(1.0);
+        }
+    }
+}

@@ -33,7 +33,6 @@ impl GUI {
 fn setup_gui(mut commands: Commands, 
     asset_server: Res<AssetServer>,) {
     let gui = GUI::new(0., 0., Color::rgb(0.0, 0.0, 1.0));
-    let texture = asset_server.load("s.png");
     commands.spawn((SpriteBundle {
         sprite: Sprite {
             color: gui.color,
@@ -44,7 +43,7 @@ fn setup_gui(mut commands: Commands,
             translation: Vec3::new(0., 0., Z_LAYER_GUI),
             ..Transform::default()
         },
-        texture: texture,
+        texture: asset_server.load("s.png"),
         ..Default::default()
     }, gui));
 }

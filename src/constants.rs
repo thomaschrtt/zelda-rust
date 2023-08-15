@@ -27,3 +27,5 @@ pub const SANCTUARY_NB: i32 = 10;
 // OTHERS
 pub const TREE_HEIGHT: f32 = 140.;
 pub const TREE_WIDTH: f32 = 115.;
+pub const BUSH_HEIGHT: f32 = 50.;
+pub const BUSH_WIDTH: f32 = 55.;

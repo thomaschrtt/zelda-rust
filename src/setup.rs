@@ -21,6 +21,7 @@ pub fn setup(
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
             scale : CAMERA_DEFAULT_SCALE,
+            far: Z_LAYER_GUI,
             ..OrthographicProjection::default()
         },
         ..Default::default()
@@ -80,6 +81,9 @@ pub fn track_player(
     camera_transform.translation.y = if y > camera_max_y { camera_max_y } else if y < camera_min_y { camera_min_y } else { y };
 }
 
+#[derive(Component)]
+pub struct Tree;
+
 pub fn setup_random_trees(
     mut commands: Commands, 
     asset_server: Res<AssetServer>, 
@@ -103,6 +107,36 @@ pub fn setup_random_trees(
             },
             sprite: TextureAtlasSprite::new(index),
             ..Default::default()
-        });
+        }).insert(Tree);
+    }
+}
+
+#[derive(Component)]
+pub struct Bush;
+
+pub fn setup_random_bushes(
+    mut commands: Commands, 
+    asset_server: Res<AssetServer>, 
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+) {
+    let bush_texture_handle = asset_server.load("bushes.png");
+    let bush_texture_atlas = TextureAtlas::from_grid(bush_texture_handle, Vec2::new(BUSH_WIDTH, BUSH_HEIGHT), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
+    let bush_texture_atlas_handle = texture_atlases.add(bush_texture_atlas);
+
+    let mut rng = rand::thread_rng();
+    for _ in 0..100 {
+        let x = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
+        let y = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
+        let index = rng.gen_range(0..3);
+        println!("x: {}, y: {}, index: {}", x, y, index);
+        commands.spawn(SpriteSheetBundle {
+            texture_atlas: bush_texture_atlas_handle.clone(),
+            transform: Transform {
+                translation: Vec3::new(x, y, -y+MAP_SIZE/2.),
+                ..Transform::default()
+            },
+            sprite: TextureAtlasSprite::new(index),
+            ..Default::default()
+        }).insert(Bush);
     }
 }

@@ -2,7 +2,8 @@ use bevy::prelude::*;
 use crate::collisions;
 use crate::constants::*;
 use crate::collisions::*;
-use crate::ennemies::Ennemy;
+use crate::ennemies;
+use crate::ennemies::*;
 use crate::structures;
 use crate::structures::*;
 use crate::setup::*;
@@ -32,7 +33,9 @@ impl Plugin for PlayerPlugin {
                                                     sanctuary_detection,
                                                     tree_transparency,
                                                     update_hitbox_pos,
-                                                    update_hitbox_visibility));
+                                                    update_hitbox_visibility,
+                                                    ennemy_detection,
+                                                    update_collisionable_pos));
     }
 }
 
@@ -43,12 +46,13 @@ pub struct Player {
     y: f32,
     facing_direction: PlayerFacingDirection,
     sprinting: bool,
+    blocking: bool,
     health: i32,
 }
 
 impl Player {
     pub fn new() -> Self {
-        Self { x: 0., y: 0., facing_direction: PlayerFacingDirection::Right, sprinting:false, health: 20 }
+        Self { x: 0., y: 0., facing_direction: PlayerFacingDirection::Right, sprinting:false, blocking: false, health: 20 }
     }
 
     fn is_facing_down(&self) -> bool {
@@ -66,6 +70,22 @@ impl Player {
     fn is_facing_right(&self) -> bool {
         self.facing_direction == PlayerFacingDirection::Right || self.facing_direction == PlayerFacingDirection::TopRight || self.facing_direction == PlayerFacingDirection::BottomRight
     }
+
+    fn take_damage(&mut self, damage: i32) {
+        self.health -= damage;
+    }
+
+    pub fn get_attacked(&mut self, damage: i32) -> bool {
+        if self.blocking {
+            return false;
+        }
+        self.take_damage(damage);
+        true
+    }
+
+    fn attack(&mut self, ennemy: &mut Ennemy) -> bool {
+        return ennemy.get_attacked(PLAYER_DAMAGE);
+    }
 }
 
 impl Collisionable for Player {
@@ -82,8 +102,9 @@ impl Collisionable for Player {
 fn player_move(
     keyboard_input: Res<Input<KeyCode>>,
     mut player_query: Query<&mut Player>,
-    collisionable_query: Query<&CollisionComponent, Without<Ennemy>>,
-    mut ennemy_query: Query<(&CollisionComponent, &mut Ennemy), With<Ennemy>>
+    collisionable_query: Query<&CollisionComponent, Without<Player>>,
+    // collisionable_query_w_player: Query<&CollisionComponent, Without<Ennemy>>,
+    // mut ennemy_query: Query<(&CollisionComponent, &mut Ennemy), With<Ennemy>>
 ) {
     let player_speed: f32;
     let mut player = player_query.single_mut();
@@ -114,21 +135,21 @@ fn player_move(
         }
     }
 
-    for (collidable, mut ennemy) in ennemy_query.iter_mut() {
-        if player.would_collide(new_x, player.y, &collidable) {
-            if player.is_facing_right() {
-                if !ennemy.move_in_direction(&PlayerFacingDirection::Right, player_speed, &collisionable_query) {
-                    new_x = actual_x;
-                }
-            } else if player.is_facing_left() {
-                if !ennemy.move_in_direction(&PlayerFacingDirection::Left, player_speed, &collisionable_query) {
-                    new_x = actual_x;
-                }
-            } else {
-                new_x = actual_x;
-            }
-        }
-    }
+    // for (collidable, mut ennemy) in ennemy_query.iter_mut() {
+    //     if player.would_collide(new_x, player.y, &collidable) {
+    //         if player.is_facing_right() {
+    //             if !ennemy.move_in_direction(&EnnemyFacingDirection::Right, player_speed, &collisionable_query_w_player) {
+    //                 new_x = actual_x;
+    //             }
+    //         } else if player.is_facing_left() {
+    //             if !ennemy.move_in_direction(&EnnemyFacingDirection::Left, player_speed, &collisionable_query_w_player) {
+    //                 new_x = actual_x;
+    //             }
+    //         } else {
+    //             new_x = actual_x;
+    //         }
+    //     }
+    // }
 
     if new_x > right_boundary {
         new_x = actual_x;
@@ -146,21 +167,21 @@ fn player_move(
         }
     }
 
-    for (collidable, mut ennemy) in ennemy_query.iter_mut() {
-        if player.would_collide(player.x, new_y, &collidable) {
-            if player.is_facing_up() {
-                if !ennemy.move_in_direction(&PlayerFacingDirection::Up, player_speed, &collisionable_query) {
-                    new_y = actual_y;
-                }
-            } else if player.is_facing_down() {
-                if !ennemy.move_in_direction(&PlayerFacingDirection::Down, player_speed, &collisionable_query) {
-                    new_y = actual_y;
-                }
-            } else {
-                new_y = actual_y;
-            }
-        }
-    }
+    // for (collidable, mut ennemy) in ennemy_query.iter_mut() {
+    //     if player.would_collide(player.x, new_y, &collidable) {
+    //         if player.is_facing_up() {
+    //             if !ennemy.move_in_direction(&EnnemyFacingDirection::Up, player_speed, &collisionable_query_w_player) {
+    //                 new_y = actual_y;
+    //             }
+    //         } else if player.is_facing_down() {
+    //             if !ennemy.move_in_direction(&EnnemyFacingDirection::Down, player_speed, &collisionable_query_w_player) {
+    //                 new_y = actual_y;
+    //             }
+    //         } else {
+    //             new_y = actual_y;
+    //         }
+    //     }
+    // }
 
     if new_y > top_boundary {
         new_y = actual_y;
@@ -236,7 +257,11 @@ fn update_player_pos(
     sprite.translation.y = y;
     match player.facing_direction {
         PlayerFacingDirection::Left => sprite.scale.x = -PLAYER_SPRITE_SCALE,
+        PlayerFacingDirection::TopLeft => sprite.scale.x = -PLAYER_SPRITE_SCALE,
+        PlayerFacingDirection::BottomLeft => sprite.scale.x = -PLAYER_SPRITE_SCALE,
         PlayerFacingDirection::Right => sprite.scale.x = PLAYER_SPRITE_SCALE,
+        PlayerFacingDirection::TopRight => sprite.scale.x = PLAYER_SPRITE_SCALE,
+        PlayerFacingDirection::BottomRight => sprite.scale.x = PLAYER_SPRITE_SCALE,
         _ => {}
     }
 }
@@ -254,6 +279,10 @@ fn spawn_player(mut commands: Commands,
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     let player: Player = Player::new();
+    let collisioncomponent = CollisionComponent::new(player.x, player.y, PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT);
+
+    let attack_delay = ennemies::AttackDelay::new(PLAYER_ATTACK_DELAY);
+    
     let hitbox = player.get_hitbox();
 
     commands.spawn(SpriteSheetBundle {
@@ -266,7 +295,9 @@ fn spawn_player(mut commands: Commands,
             sprite: TextureAtlasSprite::new(0),
             ..Default::default()
         })
-        .insert(player);
+        .insert(player)
+        .insert(attack_delay)
+        .insert(collisioncomponent);
 
     commands.spawn(SpriteBundle {
         transform: Transform {
@@ -285,6 +316,7 @@ fn spawn_player(mut commands: Commands,
 enum InteractionType {
     Tower,
     Sanctuary,
+    Ennemy,
 }
 fn can_interact_with(
     player: &Player,
@@ -293,6 +325,7 @@ fn can_interact_with(
     y: f32,
     tower: Option<&Tower>,
     sanctuary: Option<&Sanctuary>,
+    ennemy: Option<&Ennemy>,
 ) -> bool {
     match interaction_type {
         InteractionType::Tower => {
@@ -309,6 +342,13 @@ fn can_interact_with(
                 false
             }
         }
+        InteractionType::Ennemy => {
+            if let Some(e) = ennemy {
+                player.would_collide(x, y, &CollisionComponent::new_from_component(e))
+            } else {
+                false
+            }
+        }
     }
 }
 
@@ -320,7 +360,7 @@ fn tower_detection(
 ) {
     let player = player_query.single_mut();
     for tower in tower_query.iter() {
-        if can_interact_with(&player, &InteractionType::Tower, player.x, player.y + 1., Some(tower), None) {
+        if can_interact_with(&player, &InteractionType::Tower, player.x, player.y + 1., Some(tower), None, None) {
             if keyboard_input.just_pressed(KeyCode::Space) {
                 structures::show_one_sanctuary(query_sanctuary);
                 break;
@@ -336,13 +376,40 @@ fn sanctuary_detection(
 ) {
     let player = player_query.single_mut();
     for mut sanctuary in sanctuary_query.iter_mut() {
-        if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1., None, Some(&sanctuary)) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y - 1., None, Some(&sanctuary)) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x + 1., player.y, None, Some(&sanctuary)) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x - 1., player.y, None, Some(&sanctuary)) {
+        if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1., None, Some(&sanctuary), None) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y - 1., None, Some(&sanctuary), None) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x + 1., player.y, None, Some(&sanctuary), None) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x - 1., player.y, None, Some(&sanctuary), None) {
             if keyboard_input.just_pressed(KeyCode::Space) {
                 sanctuary.unlock();
                 break;
+            }
+        }
+    }
+}
+
+fn ennemy_detection(
+    mut player_query: Query<(&mut Player, &mut AttackDelay)>,
+    mut ennemy_query: Query<&mut Ennemy>,
+    keyboard_input: Res<Input<KeyCode>>,
+    time: Res<Time>,
+) {
+    let (mut player, mut attack_delay) = player_query.single_mut();
+    
+    attack_delay.timer.tick(time.delta());
+
+
+    if attack_delay.timer.finished() {
+        for mut ennemy in ennemy_query.iter_mut() {
+            if can_interact_with(&player, &InteractionType::Ennemy, player.x, player.y + PLAYER_ATTACK_RANGE, None, None, Some(&ennemy)) ||
+                can_interact_with(&player, &InteractionType::Ennemy, player.x, player.y - PLAYER_ATTACK_RANGE, None, None, Some(&ennemy)) ||
+                can_interact_with(&player, &InteractionType::Ennemy, player.x + PLAYER_ATTACK_RANGE, player.y, None, None, Some(&ennemy)) ||
+                can_interact_with(&player, &InteractionType::Ennemy, player.x - PLAYER_ATTACK_RANGE, player.y, None, None, Some(&ennemy)) {
+                if keyboard_input.just_pressed(KeyCode::Space) {
+                    player.attack(&mut ennemy);
+                    attack_delay.timer.reset();
+                    break;
+                }
             }
         }
     }
@@ -385,4 +452,11 @@ fn update_hitbox_visibility(
             *visibility = Visibility::Hidden;
         }
     }
+}
+
+fn update_collisionable_pos(
+    mut query: Query<(&mut CollisionComponent, &Player)>,
+) {
+    let (mut collisionable, player) = query.single_mut();
+    collisionable.set_pos(player.x, player.y)
 }

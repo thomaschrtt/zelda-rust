@@ -1,16 +1,26 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 
+use crate::collisions;
 use crate::constants::*;
 use crate::collisions::*;
 use crate::player::*;
 
+
+pub enum EnnemyFacingDirection {
+    Up,
+    Down,
+    Left,
+    Right,
+}
 
 pub struct EnnemyPlugin;
 
 impl Plugin for EnnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, summon_ennemy)
-            .add_systems(Update, (update_ennemy_position, update_ennemy_hitbox, ennemy_move_simple));  
+            .add_systems(Update, (update_ennemy_position, update_ennemy_hitbox, ennemy_move_simple, ennemy_attack, despawn_on_death));  
     }
 }
 
@@ -18,9 +28,23 @@ impl Plugin for EnnemyPlugin {
 pub struct Ennemy {
     x: f32,
     y: f32,
+    facingdirection: EnnemyFacingDirection,
     health: i32,
     attack: i32,
     defense_ratio: f32, // chance to block an attack
+}
+
+#[derive(Component)]
+pub struct AttackDelay {
+    pub timer: Timer,
+}
+
+impl AttackDelay {
+    pub fn new(delay: u64) -> Self {
+        Self {
+            timer: Timer::new(Duration::from_secs(delay), TimerMode::Once),
+        }
+    }
 }
 
 impl Ennemy {
@@ -29,6 +53,7 @@ impl Ennemy {
             x,
             y,
             health,
+            facingdirection: EnnemyFacingDirection::Up,
             attack,
             defense_ratio,
         }
@@ -60,10 +85,10 @@ impl Ennemy {
     pub fn move_in_direction(&mut self, direction: &PlayerFacingDirection, amount: f32, collision_query: &Query<&CollisionComponent, Without<Ennemy>>) -> bool {
         if self.can_move(&direction, amount, collision_query) {
             match direction {
-                PlayerFacingDirection::Up => self.y += amount,
-                PlayerFacingDirection::Down => self.y -= amount,
-                PlayerFacingDirection::Left => self.x -= amount,
-                PlayerFacingDirection::Right => self.x += amount,
+                PlayerFacingDirection::Up => {self.y += amount; self.facingdirection = EnnemyFacingDirection::Up},
+                PlayerFacingDirection::Down => {self.y -= amount; self.facingdirection = EnnemyFacingDirection::Down},
+                PlayerFacingDirection::Left => {self.x -= amount; self.facingdirection = EnnemyFacingDirection::Left},
+                PlayerFacingDirection::Right => {self.x += amount; self.facingdirection = EnnemyFacingDirection::Right},
                 _ => (),
             }
             true
@@ -71,7 +96,33 @@ impl Ennemy {
             false
         }
     }
+
+    fn attack(&mut self, player: &mut Player) {
+        player.get_attacked(self.attack);
+    }
     
+    fn get_facing_direction(&self) -> &EnnemyFacingDirection {
+        &self.facingdirection
+    }
+
+    pub fn get_attacked(&mut self, attack: i32) -> bool {
+        if rand::random::<f32>() > self.defense_ratio {
+            self.health -= attack;
+            if self.health <= 0 {
+                println!("ennemy died");
+            }
+            else {
+                println!("ennemy health lowered: {}", self.health);
+            }
+            return true;
+        }
+        println!("ennemy blocked attack");
+        false
+    }
+
+    pub fn get_health(&self) -> i32 {
+        self.health
+    }
 
 }
     
@@ -92,6 +143,7 @@ fn summon_ennemy(
 ) {
     let ennemy: Ennemy = Ennemy::new(100., 0., 10, 5, 0.5);
     let hitbox = CollisionComponent::new(ennemy.x, ennemy.y, ENNEMY_HITBOX_WIDTH, ENNEMY_HITBOX_HEIGHT);
+    let attack_delay = AttackDelay::new(ENNEMY_ATTACK_DELAY);
     let entity = (SpriteBundle {
         transform: Transform {
             translation: Vec3::new(ennemy.x as f32, ennemy.y as f32, Z_LAYER_ENNEMIES),
@@ -104,7 +156,7 @@ fn summon_ennemy(
             ..Default::default()
         },
         ..Default::default()
-    }, ennemy, hitbox);
+    }, ennemy, hitbox, attack_delay);
     commands.spawn(entity);
 }
 
@@ -132,5 +184,63 @@ fn ennemy_move_simple(
 
     for mut ennemy in query.iter_mut() {        
         ennemy.x += move_amount;
+    }
+}
+
+
+fn ennemy_attack(
+    mut ennemy_query: Query<(&mut Ennemy, &mut AttackDelay)>,
+    mut player_query: Query<&mut Player>,
+    time: Res<Time>
+) {
+    let mut player = player_query.single_mut();
+    for (mut ennemy, mut attack_delay) in ennemy_query.iter_mut() {
+
+        ennemy.facingdirection = EnnemyFacingDirection::Up;
+
+        attack_delay.timer.tick(time.delta());
+        if attack_delay.timer.finished() {
+            attack_delay.timer.reset();
+            
+            match ennemy.get_facing_direction() {
+                EnnemyFacingDirection::Up => {if ennemy.would_collide(ennemy.x, ennemy.y + ENNEMY_ATTACK_RANGE, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
+                        ennemy.attack(&mut player);
+                        println!("Player health lowered");
+                    }
+                },
+                EnnemyFacingDirection::Down => {
+                    if ennemy.would_collide(ennemy.x, ennemy.y - ENNEMY_ATTACK_RANGE, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
+                        ennemy.attack(&mut player);
+                        println!("Player health lowered");
+                        attack_delay.timer.tick(time.delta());
+                    }
+                },
+                EnnemyFacingDirection::Left => {
+                    if ennemy.would_collide(ennemy.x - ENNEMY_ATTACK_RANGE, ennemy.y, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
+                        ennemy.attack(&mut player);
+                        println!("Player health lowered");
+                        attack_delay.timer.tick(time.delta());
+                    }
+                },
+                EnnemyFacingDirection::Right => {
+                    if ennemy.would_collide(ennemy.x + ENNEMY_ATTACK_RANGE, ennemy.y, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
+                        ennemy.attack(&mut player);
+                        println!("Player health lowered");
+                        attack_delay.timer.tick(time.delta());
+                    }
+                },
+            }
+        }
+    }
+}
+
+fn despawn_on_death(
+    mut commands: Commands,
+    mut query: Query<(Entity, &Ennemy)>,
+) {
+    for (entity, ennemy) in query.iter_mut() {
+        if ennemy.health <= 0 {
+            commands.entity(entity).despawn();
+        }
     }
 }

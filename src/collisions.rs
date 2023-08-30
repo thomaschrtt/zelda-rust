@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::ennemies::*;
 
 #[derive(Component, Clone)]
 pub struct CollisionComponent {
@@ -148,4 +149,20 @@ pub fn get_relative_position(x1: f32, y1: f32, w1: f32, h1: f32,
     }
 
     None
+}
+
+pub fn equals(facing_direction: &EnnemyFacingDirection, relative_position: Option<RelativePosition>) -> bool {
+    if let Some(relative_position) = relative_position {
+        return equals_relative(facing_direction, relative_position);
+    }
+    false
+}
+
+fn equals_relative(facing_direction: &EnnemyFacingDirection, relative_position: RelativePosition) -> bool {
+    match facing_direction {
+        EnnemyFacingDirection::Up => relative_position == RelativePosition::Top,
+        EnnemyFacingDirection::Down => relative_position == RelativePosition::Bottom,
+        EnnemyFacingDirection::Left => relative_position == RelativePosition::Left,
+        EnnemyFacingDirection::Right => relative_position == RelativePosition::Right,
+    }
 }

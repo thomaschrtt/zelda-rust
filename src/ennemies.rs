@@ -1,13 +1,14 @@
 use std::time::Duration;
 
 use bevy::prelude::*;
+use rand::Rng;
 
 use crate::collisions;
 use crate::constants::*;
 use crate::collisions::*;
 use crate::player::*;
 
-
+#[derive(Clone)]
 pub enum EnnemyFacingDirection {
     Left,
     TopLeft,
@@ -23,7 +24,6 @@ pub enum EnnemyFacingDirection {
 pub enum EnnemyState {
     Roaming,
     Chasing,
-    Attacking,
     // add more states later
 }
 
@@ -36,7 +36,8 @@ impl Plugin for EnnemyPlugin {
                                                     update_ennemy_hitbox,
                                                     ennemy_attack, 
                                                     despawn_on_death,
-                                                    ennemy_aggro_detection));  
+                                                    ennemy_aggro_detection,
+                                                    state_speed_update));  
     }
 }
 
@@ -58,7 +59,9 @@ impl AttackDelay {
 pub struct Ennemy {
     x: f32,
     y: f32,
-    facingdirection: EnnemyFacingDirection,
+    current_direction: Option<EnnemyFacingDirection>,
+    current_speed: f32,
+    direction_counter: i32,
     state: EnnemyState,
     health: i32,
     attack: i32,
@@ -72,7 +75,9 @@ impl Ennemy {
             x,
             y,
             health,
-            facingdirection: EnnemyFacingDirection::Up,
+            current_direction: None,
+            current_speed: ENNEMY_NORMAL_SPEED,
+            direction_counter: 0,
             state: EnnemyState::Roaming,
             attack,
             defense_ratio,
@@ -128,14 +133,14 @@ impl Ennemy {
     ) -> bool {
         if self.can_move(&direction, amount, collision_query) {
             match direction {
-                EnnemyFacingDirection::Up => {self.y += amount; self.facingdirection = EnnemyFacingDirection::Up},
-                EnnemyFacingDirection::Down => {self.y -= amount; self.facingdirection = EnnemyFacingDirection::Down},
-                EnnemyFacingDirection::Left => {self.x -= amount; self.facingdirection = EnnemyFacingDirection::Left},
-                EnnemyFacingDirection::Right => {self.x += amount; self.facingdirection = EnnemyFacingDirection::Right},
-                EnnemyFacingDirection::TopLeft => {self.x -= amount; self.y += amount; self.facingdirection = EnnemyFacingDirection::TopLeft},
-                EnnemyFacingDirection::TopRight => {self.x += amount; self.y += amount; self.facingdirection = EnnemyFacingDirection::TopRight},
-                EnnemyFacingDirection::BottomLeft => {self.x -= amount; self.y -= amount; self.facingdirection = EnnemyFacingDirection::BottomLeft},
-                EnnemyFacingDirection::BottomRight => {self.x += amount; self.y -= amount; self.facingdirection = EnnemyFacingDirection::BottomRight},
+                EnnemyFacingDirection::Up => {self.y += amount; self.current_direction = Some(EnnemyFacingDirection::Up)},
+                EnnemyFacingDirection::Down => {self.y -= amount; self.current_direction = Some(EnnemyFacingDirection::Down)},
+                EnnemyFacingDirection::Left => {self.x -= amount; self.current_direction = Some(EnnemyFacingDirection::Left)},
+                EnnemyFacingDirection::Right => {self.x += amount; self.current_direction = Some(EnnemyFacingDirection::Right)},
+                EnnemyFacingDirection::TopLeft => {self.x -= amount; self.y += amount; self.current_direction = Some(EnnemyFacingDirection::TopLeft)},
+                EnnemyFacingDirection::TopRight => {self.x += amount; self.y += amount; self.current_direction = Some(EnnemyFacingDirection::TopRight)},
+                EnnemyFacingDirection::BottomLeft => {self.x -= amount; self.y -= amount; self.current_direction = Some(EnnemyFacingDirection::BottomLeft)},
+                EnnemyFacingDirection::BottomRight => {self.x += amount; self.y -= amount; self.current_direction = Some(EnnemyFacingDirection::BottomRight)},
             }
             true
         } else {
@@ -148,7 +153,7 @@ impl Ennemy {
     }
     
     fn get_facing_direction(&self) -> &EnnemyFacingDirection {
-        &self.facingdirection
+        self.current_direction.as_ref().unwrap()
     }
 
     pub fn get_attacked(&mut self, attack: i32) -> bool {
@@ -185,7 +190,7 @@ impl Ennemy {
     
 
         // Calculate the new proposed positions
-        let new_x = self.x + dx * ENNEMY_SPEED;
+        let new_x = self.x + dx * self.current_speed;
 
         if new_x < self.x {
             facing_direction = Some(EnnemyFacingDirection::Left);
@@ -193,7 +198,7 @@ impl Ennemy {
             facing_direction = Some(EnnemyFacingDirection::Right);
         }
 
-        let new_y = self.y + dy * ENNEMY_SPEED;
+        let new_y = self.y + dy * self.current_speed;
 
         if new_y < self.y {
             if let Some(direction) = facing_direction {
@@ -217,11 +222,41 @@ impl Ennemy {
             }
         }
         if let Some(direction) = facing_direction {
-            self.move_in_direction(&direction, ENNEMY_SPEED, collision_query);
+            self.move_in_direction(&direction, self.current_speed, collision_query);
         }
     }
     
 
+    // ... (autres fonctions et champs)
+
+    fn roaming(&mut self, collision_query: &Query<&CollisionComponent, Without<Ennemy>>) {
+        let new_direction: Option<EnnemyFacingDirection>;
+        if self.direction_counter <= 0 {
+            // Choisir une nouvelle direction
+            let mut rng = rand::thread_rng();
+            let direction = rng.gen_range(0..8);
+            new_direction = Some(match direction {
+                0 => EnnemyFacingDirection::Up,
+                1 => EnnemyFacingDirection::Down,
+                2 => EnnemyFacingDirection::Left,
+                3 => EnnemyFacingDirection::Right,
+                4 => EnnemyFacingDirection::TopLeft,
+                5 => EnnemyFacingDirection::TopRight,
+                6 => EnnemyFacingDirection::BottomLeft,
+                7 => EnnemyFacingDirection::BottomRight,
+                _ => EnnemyFacingDirection::Up, // ou un autre par défaut
+            });
+            self.direction_counter = rng.gen_range(25..50); // changer de direction après 50 à 100 itérations
+        }
+        else {
+            new_direction = self.current_direction.clone();
+        }
+        if let Some(ref direction) = new_direction{
+            self.move_in_direction(direction, self.current_speed, collision_query);
+        }
+
+        self.direction_counter -= 1;
+    }
 }
     
 
@@ -369,7 +404,20 @@ fn ennemy_aggro_detection(
             
         } else {
             ennemy.state = EnnemyState::Roaming;
+            ennemy.roaming(&collision_query);
             println!("ennemy is roaming")
         }
     }
 }
+
+fn state_speed_update(
+    mut ennemy_query: Query<(&mut Ennemy)>
+)
+ {
+    for (mut ennemy) in ennemy_query.iter_mut() {
+        match ennemy.state {
+            EnnemyState::Roaming => ennemy.current_speed = ENNEMY_NORMAL_SPEED,
+            EnnemyState::Chasing => ennemy.current_speed = ENNEMY_SPRINT_SPEED,
+        }
+    }
+ }

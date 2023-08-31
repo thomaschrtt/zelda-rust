@@ -182,6 +182,5 @@ fn equals_relative(facing_direction: &EnnemyFacingDirection, relative_position: 
         EnnemyFacingDirection::Down => relative_position == RelativePosition::Bottom,
         EnnemyFacingDirection::Left => relative_position == RelativePosition::Left,
         EnnemyFacingDirection::Right => relative_position == RelativePosition::Right,
-
     }
 }

@@ -40,6 +40,7 @@ impl Plugin for EnnemyPlugin {
     }
 }
 
+
 #[derive(Component)]
 pub struct AttackDelay {
     pub timer: Timer,

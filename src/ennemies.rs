@@ -31,7 +31,7 @@ pub struct EnnemyPlugin;
 
 impl Plugin for EnnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, summon_ennemy)
+        app.add_systems(Startup, summon_ennemies)
             .add_systems(Update, (update_ennemy_position, 
                                                     update_ennemy_hitbox,
                                                     ennemy_attack, 
@@ -50,7 +50,7 @@ pub struct AttackDelay {
 impl AttackDelay {
     pub fn new(delay: u64) -> Self {
         Self {
-            timer: Timer::new(Duration::from_secs(delay), TimerMode::Once),
+            timer: Timer::new(Duration::from_millis(delay), TimerMode::Once),
         }
     }
 }
@@ -148,8 +148,8 @@ impl Ennemy {
         }
     }
 
-    fn attack(&mut self, player: &mut Player) {
-        player.get_attacked(self.attack);
+    fn attack(&mut self, player: &mut Player) -> bool {
+        return player.get_attacked(self.attack);
     }
     
     fn get_facing_direction(&self) -> &EnnemyFacingDirection {
@@ -188,8 +188,6 @@ impl Ennemy {
     
         let mut facing_direction: Option<EnnemyFacingDirection> = None;
     
-
-        // Calculate the new proposed positions
         let new_x = self.x + dx * self.current_speed;
 
         if new_x < self.x {
@@ -226,8 +224,6 @@ impl Ennemy {
         }
     }
     
-
-    // ... (autres fonctions et champs)
 
     fn roaming(&mut self, collision_query: &Query<&CollisionComponent, Without<Ennemy>>) {
         let new_direction: Option<EnnemyFacingDirection>;
@@ -272,9 +268,26 @@ impl Collisionable for Ennemy {
 }
 
 fn summon_ennemy(
-    mut commands: Commands,
+    mut commands: &mut Commands,
 ) {
-    let ennemy: Ennemy = Ennemy::new(100., 0., 10, 5, 0.5);
+    
+    let mut rng = rand::thread_rng();
+
+    let max_value_x = MAP_SIZE / 2. - SANCTUARY_WIDTH / 2.;
+    let max_value_y = MAP_SIZE / 2. - SANCTUARY_HEIGHT / 2.;
+
+    let mut x: f32;
+    let mut y: f32;
+
+    loop {
+        x = rng.gen_range(-max_value_x..max_value_x);
+        y = rng.gen_range(-max_value_y..max_value_y);
+        if x!= 0. && y != 0. {
+            break;
+        }
+    }
+
+    let ennemy: Ennemy = Ennemy::new(x, y, 10, 5, 0.5);
     let hitbox = CollisionComponent::new(ennemy.x, ennemy.y, ENNEMY_HITBOX_WIDTH, ENNEMY_HITBOX_HEIGHT);
     let attack_delay = AttackDelay::new(ENNEMY_ATTACK_DELAY);
     let entity = (SpriteBundle {
@@ -291,6 +304,14 @@ fn summon_ennemy(
         ..Default::default()
     }, ennemy, hitbox, attack_delay);
     commands.spawn(entity);
+}
+
+fn summon_ennemies(
+    mut commands: Commands,
+) {
+    for _ in 0..ENNEMIES_NUMBER {
+        summon_ennemy(&mut commands);
+    }
 }
 
 fn update_ennemy_position(
@@ -325,51 +346,44 @@ fn ennemy_attack(
             attack_delay.timer.reset();
             
             match ennemy.get_facing_direction() {
-                EnnemyFacingDirection::Up => {if ennemy.would_collide(ennemy.x, ennemy.y + ENNEMY_ATTACK_RANGE, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
+                EnnemyFacingDirection::Up => {
+                    if ennemy.would_collide(ennemy.x, ennemy.y + ENNEMY_ATTACK_RANGE, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
                         ennemy.attack(&mut player);
-                        println!("Player health lowered");
                     }
                 },
                 EnnemyFacingDirection::Down => {
                     if ennemy.would_collide(ennemy.x, ennemy.y - ENNEMY_ATTACK_RANGE, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
                         ennemy.attack(&mut player);
-                        println!("Player health lowered");
                     }
                 },
                 EnnemyFacingDirection::Left => {
                     if ennemy.would_collide(ennemy.x - ENNEMY_ATTACK_RANGE, ennemy.y, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
                         ennemy.attack(&mut player);
-                        println!("Player health lowered");
                     }
                 },
                 EnnemyFacingDirection::Right => {
                     if ennemy.would_collide(ennemy.x + ENNEMY_ATTACK_RANGE, ennemy.y, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
                         ennemy.attack(&mut player);
-                        println!("Player health lowered");
                     }
                 },
                 EnnemyFacingDirection::TopLeft => {
                     if ennemy.would_collide(ennemy.x - ENNEMY_ATTACK_RANGE, ennemy.y + ENNEMY_ATTACK_RANGE, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
                         ennemy.attack(&mut player);
-                        println!("Player health lowered");
                     }
                 },
                 EnnemyFacingDirection::TopRight => {
                     if ennemy.would_collide(ennemy.x + ENNEMY_ATTACK_RANGE, ennemy.y + ENNEMY_ATTACK_RANGE, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
                         ennemy.attack(&mut player);
-                        println!("Player health lowered");
                     }
                 },
                 EnnemyFacingDirection::BottomLeft => {
                     if ennemy.would_collide(ennemy.x - ENNEMY_ATTACK_RANGE, ennemy.y - ENNEMY_ATTACK_RANGE, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
                         ennemy.attack(&mut player);
-                        println!("Player health lowered");
                     }
                 },
                 EnnemyFacingDirection::BottomRight => {
                     if ennemy.would_collide(ennemy.x + ENNEMY_ATTACK_RANGE, ennemy.y - ENNEMY_ATTACK_RANGE, &player.get_collision_component()) && collisions::equals(ennemy.get_facing_direction(), player.get_relative_position(&ennemy.get_collision_component())) {
                         ennemy.attack(&mut player);
-                        println!("Player health lowered");
                     }
                 },
             }
@@ -397,15 +411,13 @@ fn ennemy_aggro_detection(
     for (mut ennemy, transform) in ennemy_query.iter_mut() {
         let distance = transform.translation.distance(player_transform.translation);
 
-        if distance < ENNEMY_AGGRO_DISTANCE {
+        if distance < ENNEMY_AGGRO_DISTANCE && !player.is_dead() {
                 ennemy.state = EnnemyState::Chasing;
                 ennemy.chase_player(&player, &collision_query);
-                println!("ennemy is chasing")
             
         } else {
             ennemy.state = EnnemyState::Roaming;
             ennemy.roaming(&collision_query);
-            println!("ennemy is roaming")
         }
     }
 }

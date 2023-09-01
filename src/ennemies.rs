@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use bevy::prelude::*;
 use rand::Rng;
 
@@ -42,19 +40,6 @@ impl Plugin for EnnemyPlugin {
     }
 }
 
-
-#[derive(Component)]
-pub struct AttackDelay {
-    pub timer: Timer,
-}
-
-impl AttackDelay {
-    pub fn new(delay: u64) -> Self {
-        Self {
-            timer: Timer::new(Duration::from_millis(delay), TimerMode::Once),
-        }
-    }
-}
 
 #[derive(Component)]
 pub struct Ennemy {
@@ -403,14 +388,13 @@ fn summon_ennemy(
     loop {
         x = rng.gen_range(-max_value_x..max_value_x);
         y = rng.gen_range(-max_value_y..max_value_y);
-        if x!= 0. && y != 0. {
+        if (x< -ENNEMY_AGGRO_DISTANCE || x > ENNEMY_AGGRO_DISTANCE) && (y < -ENNEMY_AGGRO_DISTANCE || y > ENNEMY_AGGRO_DISTANCE) {
             break;
         }
     }
 
     let ennemy: Ennemy = Ennemy::new(x, y, 10, 5, 0.20);
     let hitbox = CollisionComponent::new(ennemy.x(), ennemy.y(), ENNEMY_HITBOX_WIDTH, ENNEMY_HITBOX_HEIGHT);
-    let attack_delay = AttackDelay::new(ENNEMY_ATTACK_DELAY);
     let entity = (SpriteSheetBundle {
         texture_atlas: texture_atlas_handle.clone(),
         transform: Transform {
@@ -420,7 +404,7 @@ fn summon_ennemy(
         },
         sprite: TextureAtlasSprite::new(0),
         ..Default::default()
-    }, ennemy, hitbox, attack_delay);
+    }, ennemy, hitbox);
     commands.spawn(entity);
 }
 
@@ -643,7 +627,7 @@ fn state_speed_update(
                 *texture = texture_atlas_handle.clone();
                 
                 ennemy.attacking_frame_time += time.delta_seconds();
-                if ennemy.attacking_frame_time >= 1.4/8. {
+                if ennemy.attacking_frame_time >= ENNEMY_ATTACK_SPEED/8. {
                     ennemy.attacking_frame_counter += 1;
                     ennemy.attacking_frame_time = 0.;
                 }

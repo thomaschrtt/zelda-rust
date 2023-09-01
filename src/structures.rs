@@ -145,7 +145,11 @@ pub fn setup_structures(
 ) {
     let tower_texture_handle = asset_server.load("tower.png");
 
-    let tower = Tower::new(100., 100.);
+    let mut rng = rand::thread_rng();
+    let x = rng.gen_range(-MAP_SIZE / 2. + TOWER_WIDTH..MAP_SIZE / 2. - TOWER_WIDTH);
+    let y = rng.gen_range(-MAP_SIZE / 2. + TOWER_HEIGHT + PLAYER_HITBOX_HEIGHT..MAP_SIZE / 2. - TOWER_HEIGHT);
+
+    let tower = Tower::new(x, y);
     setup_sanctuary(&mut commands, asset_server, texture_atlases, &collision_query);
 
     // Setup tower

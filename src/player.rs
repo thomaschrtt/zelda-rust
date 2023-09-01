@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 use crate::collisions;
 use crate::constants::*;
@@ -29,6 +31,21 @@ impl Plugin for PlayerPlugin {
                                                 ));
     }
 }
+
+
+#[derive(Component)]
+pub struct AttackDelay {
+    pub timer: Timer,
+}
+
+impl AttackDelay {
+    pub fn new(delay: u64) -> Self {
+        Self {
+            timer: Timer::new(Duration::from_millis(delay), TimerMode::Once),
+        }
+    }
+}
+
 
 enum InteractionType {
     Tower,
@@ -256,7 +273,7 @@ fn spawn_player(mut commands: Commands,
     let (x, y) = player.get_pos();
     let collisioncomponent = CollisionComponent::new(x, y, PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT);
 
-    let attack_delay = ennemies::AttackDelay::new(PLAYER_ATTACK_DELAY);
+    let attack_delay = AttackDelay::new(PLAYER_ATTACK_DELAY);
     
     let hitbox = player.get_hitbox();
 

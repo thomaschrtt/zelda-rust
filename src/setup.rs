@@ -10,6 +10,7 @@ pub fn setup(
 ) {
     let mut window = windows.single_mut();
     window.mode = WindowMode::BorderlessFullscreen;
+    window.title = "Zelda".to_string();
 
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {

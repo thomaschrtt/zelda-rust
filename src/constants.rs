@@ -22,6 +22,7 @@ pub const PLAYER_SPRINT_SPEED: f32 = 2.;
 pub const PLAYER_DAMAGE: i32 = 2;
 pub const PLAYER_ATTACK_RANGE: f32 = 5.;
 pub const PLAYER_ATTACK_DELAY: u64 = 1000;
+pub const PLAYER_HEALTH: i32 = 20;
 
 // STRUCTURES
 pub const TOWER_HEIGHT: f32 = 128.;
@@ -32,7 +33,7 @@ pub const SANCTUARY_NB: i32 = 10;
 pub const SANCTUARY_HEALING: i32 = 5;
 
 // ENNEMIES
-pub const ENNEMIES_NUMBER: i32 = 25;
+pub const ENNEMIES_NUMBER: i32 = 15;
 pub const ENNEMY_SPRITE_SIZE: f32 = 32.;
 pub const ENNEMY_SPRITE_SCALE: f32 = 0.5;
 pub const ENNEMY_HITBOX_WIDTH: f32 = ENNEMY_SPRITE_SIZE * ENNEMY_SPRITE_SCALE;

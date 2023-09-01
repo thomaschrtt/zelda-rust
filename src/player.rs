@@ -33,7 +33,9 @@ pub enum PlayerState {
     Sprinting,
     Attacking,
     Blocking,
+    Damaged,
     Healing,
+    Dying,
     Dead
 }
 
@@ -54,7 +56,7 @@ impl Plugin for PlayerPlugin {
                                                     ennemy_detection,
                                                     update_collisionable_pos,
                                                     update_player_state,
-                                                    update_dead_player));
+                                                ));
     }
 }
 
@@ -82,6 +84,14 @@ pub struct Player {
     healing_frame_counter: usize,
     healing_frame_time: f32,
     healing_duration_elapsed: f32,
+
+    damaged_frame_counter: usize,
+    damaged_frame_time: f32,
+    damaged_duration_elapsed: f32,
+
+    dying_frame_counter: usize,
+    dying_frame_time: f32,
+    dying_duration_elapsed: f32,
 }
 
 impl Player {
@@ -90,16 +100,23 @@ impl Player {
                y: 0., 
                facing_direction: PlayerFacingDirection::Right, 
                state: PlayerState::Idle, 
-               health: 20, 
+               health: PLAYER_HEALTH, 
                idle_frame_counter: 0, idle_frame_time: 0., 
                attack_frame_counter: 0, attack_frame_time: 0., 
                sprint_frame_counter: 0, sprint_frame_time: 0., 
                walk_frame_counter: 0, walk_frame_time: 0.,
-               healing_frame_counter: 0, healing_frame_time: 0., healing_duration_elapsed: 0. }
+               healing_frame_counter: 0, healing_frame_time: 0., healing_duration_elapsed: 0.,
+               damaged_frame_counter: 0, damaged_frame_time: 0., damaged_duration_elapsed: 0.,
+                dying_frame_counter: 0, dying_frame_time: 0., dying_duration_elapsed: 0.,
+             }
     }
 
     fn take_damage(&mut self, damage: i32) {
         self.health -= damage;
+        self.state = PlayerState::Damaged;
+        if self.health <= 0 {
+            self.state = PlayerState::Dying;
+        }
     }
 
     pub fn get_attacked(&mut self, damage: i32) -> bool {
@@ -116,7 +133,7 @@ impl Player {
     }
 
     pub fn is_aggroable(&self) -> bool {
-        if self.is_dead() || self.is_healing(){
+        if self.is_dead() || self.is_healing() || self.is_dying() {
             return false;
         }
         true
@@ -126,17 +143,43 @@ impl Player {
         return ennemy.get_attacked(PLAYER_DAMAGE);
     }
 
+    fn is_idle(&self) -> bool {
+        self.state == PlayerState::Idle
+    }
+
+    fn is_moving(&self) -> bool {
+        self.state == PlayerState::Moving
+    }
+
+    fn is_sprinting(&self) -> bool {
+        self.state == PlayerState::Sprinting
+    }
+
+    fn is_attacking(&self) -> bool {
+        self.state == PlayerState::Attacking
+    }
+
     fn is_blocking(&self) -> bool {
         self.state == PlayerState::Blocking
+    }
+
+    fn is_damaged(&self) -> bool {
+        self.state == PlayerState::Damaged
+    }
+
+    fn is_healing(&self) -> bool {
+        self.state == PlayerState::Healing
     }
 
     fn is_dead(&self) -> bool {
         self.state == PlayerState::Dead
     }
 
-    fn is_healing(&self) -> bool {
-        self.state == PlayerState::Healing
+    fn is_dying(&self) -> bool {
+        self.state == PlayerState::Dying
     }
+
+
 
     fn heal(&mut self) {
         self.health += SANCTUARY_HEALING;
@@ -211,7 +254,7 @@ fn update_player_state(
 ) {
     let mut player = query.single_mut();
 
-    if player.state == PlayerState::Attacking || player.state == PlayerState::Dead || player.state == PlayerState::Healing {
+    if player.is_attacking() || player.is_dead() || player.is_healing() || player.is_damaged() || player.is_dying() {
         return;
     }
 
@@ -385,6 +428,22 @@ fn update_player_sprite(
             // Mettre à jour l'index de la texture
             texture.index = 64 + player.attack_frame_counter;
         },
+
+        PlayerState::Dying => {
+            player.dying_frame_time += time.delta_seconds();
+            player.dying_duration_elapsed += time.delta_seconds();
+
+            if player.dying_frame_time >= 1./8. {
+                player.dying_frame_counter = (player.dying_frame_counter + 1) % 8;
+                player.dying_frame_time = 0.0; 
+            }
+            texture.index = 56 + player.dying_frame_counter;
+            if player.dying_duration_elapsed >= 1. {
+                player.state = PlayerState::Dead;
+                player.dying_duration_elapsed = 0.;
+            }
+        },
+        
         PlayerState::Dead => {
             texture.index = 63;
         },
@@ -403,15 +462,20 @@ fn update_player_sprite(
             }
             
         },
-    }
-}
+        PlayerState::Damaged => {
+            player.damaged_frame_time += time.delta_seconds();
+            player.damaged_duration_elapsed += time.delta_seconds();
 
-fn update_dead_player(
-    mut query: Query<&mut Player>,
-) {
-    let mut player = query.single_mut();
-    if player.health <= 0 {
-        player.state = PlayerState::Dead;
+            if player.damaged_frame_time >= 0.15 {
+                player.damaged_frame_counter = (player.damaged_frame_counter + 1) % 3;
+                player.damaged_frame_time = 0.0; 
+            }
+            texture.index = 48 + player.damaged_frame_counter;
+            if player.damaged_duration_elapsed >= 0.15*3. {
+                player.state = PlayerState::Idle;
+                player.damaged_duration_elapsed = 0.;
+            }
+        }
     }
 }
 
@@ -556,7 +620,7 @@ fn ennemy_detection(
 
 
     if attack_delay.timer.finished() {
-        if player.state == PlayerState::Attacking {
+        if player.is_attacking() {
             player.state = PlayerState::Idle;
         }
         for mut ennemy in ennemy_query.iter_mut() {

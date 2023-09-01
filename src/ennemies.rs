@@ -11,9 +11,16 @@ use crate::entitypattern::EntityPatern;
 use crate::entitypattern::FacingDirection;
 use crate::player::*;
 
+#[derive(Clone, Copy, PartialEq)]
 pub enum EnnemyState {
+    Idle,
     Roaming,
     Chasing,
+    Damaged,
+    Attacking,
+    Blocking,
+    Dying,
+    Dead,
     // add more states later
 }
 
@@ -27,7 +34,9 @@ impl Plugin for EnnemyPlugin {
                                                     ennemy_attack, 
                                                     despawn_on_death,
                                                     ennemy_aggro_detection,
-                                                    state_speed_update));  
+                                                    state_speed_update,
+                                                    update_ennemy_sprite,
+                                                    change_sprite_orientation));  
     }
 }
 
@@ -53,6 +62,26 @@ pub struct Ennemy {
     state: EnnemyState,
     attack: i32,
     defense_ratio: f32, // chance to block an attack
+
+    roaming_frame_counter: usize,
+    roaming_frame_time: f32,
+
+    chasing_frame_counter: usize,
+    chasing_frame_time: f32,
+
+    damaged_frame_counter: usize,
+    damaged_frame_time: f32,
+
+    attacking_frame_counter: usize,
+    attacking_frame_time: f32,
+    attacking_has_hit: bool,
+
+    blocking_frame_counter: usize,
+    blocking_frame_time: f32,
+
+    dying_frame_counter: usize,
+    dying_frame_time: f32,
+
 }
 
 impl Ennemy {
@@ -65,6 +94,26 @@ impl Ennemy {
             state: EnnemyState::Roaming,
             attack,
             defense_ratio,
+
+            roaming_frame_counter: 0,
+            roaming_frame_time: 0.,
+
+            chasing_frame_counter: 0,
+            chasing_frame_time: 0.,
+
+            damaged_frame_counter: 0,
+            damaged_frame_time: 0.,
+
+            attacking_frame_counter: 0,
+            attacking_frame_time: 0.,
+            attacking_has_hit: false,
+
+            blocking_frame_counter: 0,
+            blocking_frame_time: 0.,
+
+            dying_frame_counter: 0,
+            dying_frame_time: 0.,
+
         }
     }
 
@@ -211,6 +260,31 @@ impl Ennemy {
 
         self.direction_counter -= 1;
     }
+
+    fn is_taking_damage(&self) -> bool {
+        self.state == EnnemyState::Damaged
+    }
+
+    fn is_attacking(&self) -> bool {
+        self.state == EnnemyState::Attacking
+    }
+
+    fn is_blocking(&self) -> bool {
+        self.state == EnnemyState::Blocking
+    }
+
+    fn is_dying(&self) -> bool {
+        self.state == EnnemyState::Dying
+    }
+
+
+    fn is_doing_something(&self) -> bool {
+        self.is_taking_damage() || self.is_attacking() || self.is_blocking() || self.is_dying() || self.is_dead()
+    }
+
+    fn is_dead(&self) -> bool {
+        self.state == EnnemyState::Dead
+    }
 }
 
 
@@ -226,7 +300,12 @@ impl Collisionable for Ennemy {
 
 impl EntityBehavior for Ennemy {
     fn attack(&mut self, target: &mut dyn EntityBehavior) -> bool {
-        return target.get_attacked(self.attack);
+        if !self.is_taking_damage() {self.state = EnnemyState::Attacking;}
+        if self.attacking_frame_counter == 6 && !self.attacking_has_hit{
+            self.attacking_has_hit = true;
+            return target.get_attacked(self.attack);
+        }
+        false
     }
 
     fn get_attacked(&mut self, damage: i32) -> bool {
@@ -234,18 +313,21 @@ impl EntityBehavior for Ennemy {
             self.take_damage(damage);
             if self.self_entity.health() <= 0 {
                 println!("ennemy died");
+                self.state = EnnemyState::Dying;
             }
             else {
                 println!("ennemy health lowered: {}", self.self_entity.health());
             }
             return true;
         }
+        self.state = EnnemyState::Blocking;
         println!("ennemy blocked attack");
         false
     }
 
     fn take_damage(&mut self, damage: i32) -> bool {
         self.self_entity.add_health(-damage);
+        self.state = EnnemyState::Damaged;
         true
     }
 
@@ -284,8 +366,16 @@ impl EntityBehavior for Ennemy {
 
 fn summon_ennemy(
     commands: &mut Commands,
+    asset_server: &Res<AssetServer>, 
+    texture_atlases: &mut ResMut<Assets<TextureAtlas>>
 ) {
     
+    let texture_handle = asset_server.load("Skeleton/Idle.png");
+    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(150., 150.), 4, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+
+
+
     let mut rng = rand::thread_rng();
 
     let max_value_x = MAP_SIZE / 2. - SANCTUARY_WIDTH / 2.;
@@ -302,20 +392,17 @@ fn summon_ennemy(
         }
     }
 
-    let ennemy: Ennemy = Ennemy::new(x, y, 10, 5, 0.5);
+    let ennemy: Ennemy = Ennemy::new(x, y, 10, 5, 0.20);
     let hitbox = CollisionComponent::new(ennemy.x(), ennemy.y(), ENNEMY_HITBOX_WIDTH, ENNEMY_HITBOX_HEIGHT);
     let attack_delay = AttackDelay::new(ENNEMY_ATTACK_DELAY);
-    let entity = (SpriteBundle {
+    let entity = (SpriteSheetBundle {
+        texture_atlas: texture_atlas_handle.clone(),
         transform: Transform {
             translation: Vec3::new(ennemy.x() as f32, ennemy.y() as f32, Z_LAYER_ENNEMIES),
             scale: Vec3::new(ENNEMY_SPRITE_SCALE, ENNEMY_SPRITE_SCALE, 1.),
             ..Default::default()
         },
-        sprite: Sprite {
-            custom_size: Some(Vec2::new(ENNEMY_SPRITE_SIZE, ENNEMY_SPRITE_SIZE)),
-            color: Color::rgb(1., 0., 0.),
-            ..Default::default()
-        },
+        sprite: TextureAtlasSprite::new(0),
         ..Default::default()
     }, ennemy, hitbox, attack_delay);
     commands.spawn(entity);
@@ -323,9 +410,11 @@ fn summon_ennemy(
 
 fn summon_ennemies(
     mut commands: Commands,
+    asset_server: Res<AssetServer>, 
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>
 ) {
     for _ in 0..ENNEMIES_NUMBER {
-        summon_ennemy(&mut commands);
+        summon_ennemy(&mut commands, &asset_server, &mut texture_atlases);
     }
 }
 
@@ -344,17 +433,12 @@ fn update_ennemy_hitbox(
 }
 
 fn ennemy_attack(
-    mut ennemy_query: Query<(&mut Ennemy, &mut AttackDelay)>,
+    mut ennemy_query: Query<&mut Ennemy>,
     mut player_query: Query<&mut Player>,
-    time: Res<Time>
 ) {
     let mut player = player_query.single_mut();
-    for (mut ennemy, mut attack_delay) in ennemy_query.iter_mut() {
-
-
-        attack_delay.timer.tick(time.delta());
-        if attack_delay.timer.finished() {
-            attack_delay.timer.reset();
+    for mut ennemy in ennemy_query.iter_mut() {
+        if !ennemy.is_blocking() && !ennemy.is_dying() && !ennemy.is_dead() {
             if let Some(direction) = ennemy.facing_direction() {
                 let actual_player: &mut Player = &mut player;
                 match direction {
@@ -400,6 +484,7 @@ fn ennemy_attack(
                     },
                 }
             }
+            
         }
     }
 }
@@ -409,7 +494,7 @@ fn despawn_on_death(
     mut query: Query<(Entity, &Ennemy)>,
 ) {
     for (entity, ennemy) in query.iter_mut() {
-        if ennemy.self_entity.health() <= 0 {
+        if ennemy.is_dead() {
             commands.entity(entity).despawn();
         }
     }
@@ -423,15 +508,16 @@ fn ennemy_aggro_detection(
     let (player, player_transform) = player_query.single();
     for (mut ennemy, transform) in ennemy_query.iter_mut() {
         let distance = transform.translation.distance(player_transform.translation);
-
-        if distance < ENNEMY_AGGRO_DISTANCE && player.is_aggroable() {
+        if !ennemy.is_doing_something() {
+            if distance < ENNEMY_AGGRO_DISTANCE && player.is_aggroable() {
                 ennemy.state = EnnemyState::Chasing;
                 ennemy.chase_player(&player, &collision_query);
             
-        } else {
-            ennemy.state = EnnemyState::Roaming;
-            ennemy.roaming(&collision_query);
-        }
+            } else {
+                ennemy.state = EnnemyState::Roaming;
+                ennemy.roaming(&collision_query);
+            }
+        }    
     }
 }
 
@@ -443,6 +529,176 @@ fn state_speed_update(
         match ennemy.state {
             EnnemyState::Roaming => ennemy.current_speed = ENNEMY_NORMAL_SPEED,
             EnnemyState::Chasing => ennemy.current_speed = ENNEMY_SPRINT_SPEED,
+            _ => (),
         }
     }
  }
+
+ fn update_ennemy_sprite(
+    mut query: Query<(&mut Ennemy, &mut TextureAtlasSprite, &mut Handle<TextureAtlas>)>,
+    asset_server: Res<AssetServer>, 
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    time: Res<Time>,
+) {
+    for (mut ennemy, mut sprite, mut texture) in query.iter_mut() {
+        match ennemy.state {
+            EnnemyState::Idle => {
+                sprite.index = 0;
+            },
+            EnnemyState::Roaming => {
+                
+                let texture_handle = asset_server.load("Skeleton/Walk.png");
+                let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(150., 150.), 4, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
+                let texture_atlas_handle = texture_atlases.add(texture_atlas);
+
+                *texture = texture_atlas_handle.clone();
+                
+                ennemy.roaming_frame_time += time.delta_seconds();
+                if ennemy.roaming_frame_time >= 0.3 {
+                    ennemy.roaming_frame_counter += 1;
+                    ennemy.roaming_frame_time = 0.;
+                }
+
+                if ennemy.roaming_frame_counter >= 4 {
+                    ennemy.roaming_frame_counter = 0;
+                }
+
+                sprite.index = ennemy.roaming_frame_counter;
+            },
+            EnnemyState::Chasing => {
+                    
+                    let texture_handle = asset_server.load("Skeleton/Walk.png");
+                    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(150., 150.), 4, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
+                    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    
+                    *texture = texture_atlas_handle.clone();
+                    
+                    ennemy.chasing_frame_time += time.delta_seconds();
+                    if ennemy.chasing_frame_time >= 0.1 {
+                        ennemy.chasing_frame_counter += 1;
+                        ennemy.chasing_frame_time = 0.;
+                    }
+    
+                    if ennemy.chasing_frame_counter >= 4 {
+                        ennemy.chasing_frame_counter = 0;
+                    }
+    
+                    sprite.index = ennemy.chasing_frame_counter;
+            },
+            EnnemyState::Damaged => {
+                let texture_handle = asset_server.load("Skeleton/Take Hit.png");
+                let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(150., 150.), 4, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
+                let texture_atlas_handle = texture_atlases.add(texture_atlas);
+
+                *texture = texture_atlas_handle.clone();
+                
+                ennemy.damaged_frame_time += time.delta_seconds();
+                if ennemy.damaged_frame_time >= 0.2 {
+                    ennemy.damaged_frame_counter += 1;
+                    ennemy.damaged_frame_time = 0.;
+                }
+
+                if ennemy.damaged_frame_counter >= 4 {
+                    ennemy.damaged_frame_counter = 0;
+                    ennemy.state = EnnemyState::Chasing;
+                }   
+
+                sprite.index = ennemy.damaged_frame_counter;
+            },
+            EnnemyState::Attacking => {
+                let texture_handle = asset_server.load("Skeleton/Attack.png");
+                let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(150., 150.), 8, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
+                let texture_atlas_handle = texture_atlases.add(texture_atlas);
+
+                *texture = texture_atlas_handle.clone();
+                
+                ennemy.attacking_frame_time += time.delta_seconds();
+                if ennemy.attacking_frame_time >= 1.4/8. {
+                    ennemy.attacking_frame_counter += 1;
+                    ennemy.attacking_frame_time = 0.;
+                }
+
+                if ennemy.attacking_frame_counter >= 8 {
+                    ennemy.attacking_frame_counter = 0;
+                    ennemy.attacking_has_hit = false;
+                    ennemy.state = EnnemyState::Chasing;
+                }   
+
+                sprite.index = ennemy.attacking_frame_counter;
+            },
+            EnnemyState::Blocking => {
+                let texture_handle = asset_server.load("Skeleton/Shield.png");
+                let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(150., 150.), 4, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
+                let texture_atlas_handle = texture_atlases.add(texture_atlas);
+
+                *texture = texture_atlas_handle.clone();
+                
+                ennemy.blocking_frame_time += time.delta_seconds();
+                if ennemy.blocking_frame_time >= 0.1 {
+                    ennemy.blocking_frame_counter += 1;
+                    ennemy.blocking_frame_time = 0.;
+                }
+
+                if ennemy.blocking_frame_counter >= 4 {
+                    ennemy.blocking_frame_counter = 0;
+                    ennemy.state = EnnemyState::Chasing;
+                }   
+
+                sprite.index = ennemy.blocking_frame_counter;
+            },
+            EnnemyState::Dying => {
+                let texture_handle = asset_server.load("Skeleton/Death.png");
+                let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(150., 150.), 4, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
+                let texture_atlas_handle = texture_atlases.add(texture_atlas);
+
+                *texture = texture_atlas_handle.clone();
+                
+                ennemy.dying_frame_time += time.delta_seconds();
+                if ennemy.dying_frame_time >= 0.2 {
+                    ennemy.dying_frame_counter += 1;
+                    ennemy.dying_frame_time = 0.;
+                }
+
+                if ennemy.dying_frame_counter >= 4 {
+                    ennemy.dying_frame_counter = 0;
+                    ennemy.state = EnnemyState::Dead;
+                }   
+
+                sprite.index = ennemy.dying_frame_counter;
+            },
+            EnnemyState::Dead => {
+                sprite.index = 3;
+            },
+        }
+    }
+}
+
+fn change_sprite_orientation(
+    mut query: Query<(&mut Transform, &Ennemy)>,
+) {
+    for (mut transform, ennemy) in query.iter_mut() {
+        if let Some(direction) = ennemy.facing_direction() {
+            match direction {
+                FacingDirection::Left => {
+                    transform.scale.x = -ENNEMY_SPRITE_SCALE;
+                },
+                FacingDirection::Right => {
+                    transform.scale.x = ENNEMY_SPRITE_SCALE;
+                },
+                FacingDirection::TopLeft => {
+                    transform.scale.x = -ENNEMY_SPRITE_SCALE;
+                },
+                FacingDirection::TopRight => {
+                    transform.scale.x = ENNEMY_SPRITE_SCALE;
+                },
+                FacingDirection::BottomLeft => {
+                    transform.scale.x = -ENNEMY_SPRITE_SCALE;
+                },
+                FacingDirection::BottomRight => {
+                    transform.scale.x = ENNEMY_SPRITE_SCALE;
+                },
+                _ => (),
+            }
+        }
+    }
+}

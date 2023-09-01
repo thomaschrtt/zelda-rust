@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::ui::update;
 use crate::collisions;
 use crate::constants::*;
 use crate::collisions::*;
@@ -9,25 +8,6 @@ use crate::entitypattern::*;
 use crate::structures;
 use crate::structures::*;
 use crate::setup::*;
-
-enum InteractionType {
-    Tower,
-    Sanctuary,
-    Ennemy,
-}
-
-#[derive(PartialEq)]
-pub enum PlayerState {
-    Idle,
-    Moving,
-    Sprinting,
-    Attacking,
-    Blocking,
-    Damaged,
-    Healing,
-    Dying,
-    Dead
-}
 
 pub struct PlayerPlugin;
 
@@ -48,6 +28,25 @@ impl Plugin for PlayerPlugin {
                                                     update_player_state,
                                                 ));
     }
+}
+
+enum InteractionType {
+    Tower,
+    Sanctuary,
+    Ennemy,
+}
+
+#[derive(PartialEq)]
+pub enum PlayerState {
+    Idle,
+    Moving,
+    Sprinting,
+    Attacking,
+    Blocking,
+    Damaged,
+    Healing,
+    Dying,
+    Dead
 }
 
 
@@ -97,6 +96,27 @@ impl Player {
     }
 
     pub fn is_aggroable(&self) -> bool {
+        if self.is_dead() || self.is_healing() || self.is_dying() {
+            return false;
+        }
+        true
+    }
+
+    fn can_move(&self) -> bool {
+        if self.is_dead() || self.is_healing() || self.is_dying() {
+            return false;
+        }
+        true
+    }
+
+    fn can_change_facing_direction(&self) -> bool {
+        if self.is_dead() || self.is_healing() {
+            return false;
+        }
+        true
+    }
+
+    fn can_interact(&self) -> bool {
         if self.is_dead() || self.is_healing() || self.is_dying() {
             return false;
         }
@@ -305,7 +325,7 @@ fn player_move(
     let player_speed: f32;
     let mut player = player_query.single_mut();
 
-    if player.is_dead() || player.is_healing() {
+    if !player.can_move() {
         return;
     }
 
@@ -365,7 +385,7 @@ fn player_facing_direction(
 ) {
     let mut player = query.single_mut();
 
-    if player.is_dead() {
+    if !player.can_change_facing_direction() {
         return;
     }
     if keyboard_input.pressed(KeyCode::Left) && keyboard_input.pressed(KeyCode::Up) {
@@ -441,12 +461,16 @@ fn update_player_sprite(
 
             // Changer de frame toutes les 0.1 secondes (ou selon votre choix)
             if player.attack_frame_time >= 0.1 {
-                player.attack_frame_counter = (player.attack_frame_counter + 1) % 8;
+                player.attack_frame_counter = player.attack_frame_counter + 1;
                 player.attack_frame_time = 0.0; // Réinitialiser le temps écoulé
             }
 
             // Mettre à jour l'index de la texture
             texture.index = 64 + player.attack_frame_counter;
+            if player.attack_frame_counter >= 7 {
+                player.state = PlayerState::Idle;
+                player.attack_frame_counter = 0;
+            }
         },
 
         PlayerState::Dying => {
@@ -562,7 +586,7 @@ fn can_interact_with(
     ennemy: Option<&Ennemy>,
 ) -> bool {
 
-    if player.is_dead() {
+    if !player.can_interact() {
         return false;
     }
 

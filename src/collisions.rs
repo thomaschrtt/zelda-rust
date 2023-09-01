@@ -175,7 +175,7 @@ fn equals_relative(facing_direction: &FacingDirection, relative_position: Relati
 }
 
 pub fn update_collisionable_pos<T: EntityBehavior + Component>(
-    mut entity_query: &mut Query<(&mut CollisionComponent, &T)>,
+    entity_query: &mut Query<(&mut CollisionComponent, &T)>,
 ) {
     for (mut collision_component, collisionable) in entity_query.iter_mut() {
         collision_component.set_pos(collisionable.x(), collisionable.y());

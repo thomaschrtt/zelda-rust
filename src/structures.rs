@@ -65,13 +65,14 @@ impl Sanctuary {
         Sanctuary::new(x, y)
     }
 
-    pub fn unlock(&mut self) {
+    pub fn unlock(&mut self) -> bool {
         if self.unlocked {
             println!("Sanctuaire déjà débloqué");
-            return;
+            return false;
         }
         println!("Sanctuaire débloqué");
         self.unlocked = true;
+        true
     }
 
     pub fn is_visible(&self) -> bool {

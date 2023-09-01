@@ -29,9 +29,10 @@ pub const TOWER_WIDTH: f32 = 67.;
 pub const SANCTUARY_HEIGHT: f32 = 75.;
 pub const SANCTUARY_WIDTH: f32 = 96.;
 pub const SANCTUARY_NB: i32 = 10;
+pub const SANCTUARY_HEALING: i32 = 5;
 
 // ENNEMIES
-pub const ENNEMIES_NUMBER: i32 = 150;
+pub const ENNEMIES_NUMBER: i32 = 25;
 pub const ENNEMY_SPRITE_SIZE: f32 = 32.;
 pub const ENNEMY_SPRITE_SCALE: f32 = 0.5;
 pub const ENNEMY_HITBOX_WIDTH: f32 = ENNEMY_SPRITE_SIZE * ENNEMY_SPRITE_SCALE;

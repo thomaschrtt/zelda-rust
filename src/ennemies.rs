@@ -411,7 +411,7 @@ fn ennemy_aggro_detection(
     for (mut ennemy, transform) in ennemy_query.iter_mut() {
         let distance = transform.translation.distance(player_transform.translation);
 
-        if distance < ENNEMY_AGGRO_DISTANCE && !player.is_dead() {
+        if distance < ENNEMY_AGGRO_DISTANCE && player.is_aggroable() {
                 ennemy.state = EnnemyState::Chasing;
                 ennemy.chase_player(&player, &collision_query);
             
@@ -423,7 +423,7 @@ fn ennemy_aggro_detection(
 }
 
 fn state_speed_update(
-    mut ennemy_query: Query<(&mut Ennemy)>
+    mut ennemy_query: Query<&mut Ennemy>
 )
  {
     for (mut ennemy) in ennemy_query.iter_mut() {

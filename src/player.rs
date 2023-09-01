@@ -33,6 +33,7 @@ pub enum PlayerState {
     Sprinting,
     Attacking,
     Blocking,
+    Healing,
     Dead
 }
 
@@ -77,27 +78,24 @@ pub struct Player {
 
     walk_frame_counter: usize,
     walk_frame_time: f32,
+
+    healing_frame_counter: usize,
+    healing_frame_time: f32,
+    healing_duration_elapsed: f32,
 }
 
 impl Player {
     pub fn new() -> Self {
-        Self { x: 0., y: 0., facing_direction: PlayerFacingDirection::Right, state: PlayerState::Idle, health: 20, idle_frame_counter: 0, idle_frame_time: 0., attack_frame_counter: 0, attack_frame_time: 0., sprint_frame_counter: 0, sprint_frame_time: 0., walk_frame_counter: 0, walk_frame_time: 0. }
-    }
-
-    fn is_facing_down(&self) -> bool {
-        self.facing_direction == PlayerFacingDirection::Down || self.facing_direction == PlayerFacingDirection::BottomLeft || self.facing_direction == PlayerFacingDirection::BottomRight
-    }
-
-    fn is_facing_up(&self) -> bool {
-        self.facing_direction == PlayerFacingDirection::Up || self.facing_direction == PlayerFacingDirection::TopLeft || self.facing_direction == PlayerFacingDirection::TopRight
-    }
-
-    fn is_facing_left(&self) -> bool {
-        self.facing_direction == PlayerFacingDirection::Left || self.facing_direction == PlayerFacingDirection::TopLeft || self.facing_direction == PlayerFacingDirection::BottomLeft
-    }
-
-    fn is_facing_right(&self) -> bool {
-        self.facing_direction == PlayerFacingDirection::Right || self.facing_direction == PlayerFacingDirection::TopRight || self.facing_direction == PlayerFacingDirection::BottomRight
+        Self { x: 0., 
+               y: 0., 
+               facing_direction: PlayerFacingDirection::Right, 
+               state: PlayerState::Idle, 
+               health: 20, 
+               idle_frame_counter: 0, idle_frame_time: 0., 
+               attack_frame_counter: 0, attack_frame_time: 0., 
+               sprint_frame_counter: 0, sprint_frame_time: 0., 
+               walk_frame_counter: 0, walk_frame_time: 0.,
+               healing_frame_counter: 0, healing_frame_time: 0., healing_duration_elapsed: 0. }
     }
 
     fn take_damage(&mut self, damage: i32) {
@@ -105,12 +103,22 @@ impl Player {
     }
 
     pub fn get_attacked(&mut self, damage: i32) -> bool {
+        if !self.is_aggroable() {
+            return false;
+        }
         if self.is_blocking() {
             println!("Player blocked the attack");
             return false;
         }
         self.take_damage(damage);
         println!("Player took {} damage", damage);
+        true
+    }
+
+    pub fn is_aggroable(&self) -> bool {
+        if self.is_dead() || self.is_healing(){
+            return false;
+        }
         true
     }
 
@@ -122,8 +130,19 @@ impl Player {
         self.state == PlayerState::Blocking
     }
 
-    pub fn is_dead(&self) -> bool {
+    fn is_dead(&self) -> bool {
         self.state == PlayerState::Dead
+    }
+
+    fn is_healing(&self) -> bool {
+        self.state == PlayerState::Healing
+    }
+
+    fn heal(&mut self) {
+        self.health += SANCTUARY_HEALING;
+        println!("Player health now at {}", self.health);
+        self.state = PlayerState::Healing;
+
     }
 }
 
@@ -192,7 +211,7 @@ fn update_player_state(
 ) {
     let mut player = query.single_mut();
 
-    if player.state == PlayerState::Attacking || player.state == PlayerState::Dead {
+    if player.state == PlayerState::Attacking || player.state == PlayerState::Dead || player.state == PlayerState::Healing {
         return;
     }
 
@@ -222,7 +241,7 @@ fn player_move(
     let player_speed: f32;
     let mut player = player_query.single_mut();
 
-    if player.is_dead() {
+    if player.is_dead() || player.is_healing() {
         return;
     }
 
@@ -369,6 +388,21 @@ fn update_player_sprite(
         PlayerState::Dead => {
             texture.index = 63;
         },
+        PlayerState::Healing => {
+            player.healing_frame_time += time.delta_seconds();
+            player.healing_duration_elapsed += time.delta_seconds();
+
+            if player.healing_frame_time >= 0.4 {
+                player.healing_frame_counter = (player.healing_frame_counter + 1) % 3;
+                player.healing_frame_time = 0.0; 
+            }
+            texture.index = 3 + player.healing_frame_counter;
+            if player.healing_duration_elapsed >= 3. {
+                player.state = PlayerState::Idle;
+                player.healing_duration_elapsed = 0.;
+            }
+            
+        },
     }
 }
 
@@ -494,14 +528,16 @@ fn sanctuary_detection(
     mut sanctuary_query: Query<&mut Sanctuary>,
     keyboard_input: Res<Input<KeyCode>>,
 ) {
-    let player = player_query.single_mut();
+    let mut player = player_query.single_mut();
     for mut sanctuary in sanctuary_query.iter_mut() {
         if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1., None, Some(&sanctuary), None) ||
             can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y - 1., None, Some(&sanctuary), None) ||
             can_interact_with(&player, &InteractionType::Sanctuary, player.x + 1., player.y, None, Some(&sanctuary), None) ||
             can_interact_with(&player, &InteractionType::Sanctuary, player.x - 1., player.y, None, Some(&sanctuary), None) {
             if keyboard_input.just_pressed(KeyCode::Space) {
-                sanctuary.unlock();
+                if sanctuary.unlock() {  
+                    player.heal();
+                }
                 break;
             }
         }

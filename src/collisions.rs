@@ -1,5 +1,7 @@
 use bevy::prelude::*;
-use crate::{ennemies::*, player::PlayerFacingDirection};
+
+use crate::entitypattern::{FacingDirection, EntityBehavior};
+
 
 #[derive(Component, Clone)]
 pub struct CollisionComponent {
@@ -151,36 +153,32 @@ pub fn get_relative_position(x1: f32, y1: f32, w1: f32, h1: f32,
     None
 }
 
-pub fn equals(facing_direction: &EnnemyFacingDirection, relative_position: Option<RelativePosition>) -> bool {
+pub fn equals(facing_direction: &FacingDirection, relative_position: Option<RelativePosition>) -> bool {
     if let Some(relative_position) = relative_position {
         return equals_relative(facing_direction, relative_position);
     }
     false
 }
 
-pub fn get_ennemy_facing_from_player_facing(player_facing_direction: &PlayerFacingDirection) -> EnnemyFacingDirection {
-    match player_facing_direction {
-        PlayerFacingDirection::Up => EnnemyFacingDirection::Up,
-        PlayerFacingDirection::Down => EnnemyFacingDirection::Down,
-        PlayerFacingDirection::Left => EnnemyFacingDirection::Left,
-        PlayerFacingDirection::Right => EnnemyFacingDirection::Right,
-        PlayerFacingDirection::TopLeft => EnnemyFacingDirection::TopLeft,
-        PlayerFacingDirection::TopRight => EnnemyFacingDirection::TopRight,
-        PlayerFacingDirection::BottomLeft => EnnemyFacingDirection::BottomLeft,
-        PlayerFacingDirection::BottomRight => EnnemyFacingDirection::BottomRight,
-    }
-}
-
-fn equals_relative(facing_direction: &EnnemyFacingDirection, relative_position: RelativePosition) -> bool {
+fn equals_relative(facing_direction: &FacingDirection, relative_position: RelativePosition) -> bool {
     match facing_direction {
 
-        EnnemyFacingDirection::TopLeft => relative_position == RelativePosition::Top || relative_position == RelativePosition::Left,
-        EnnemyFacingDirection::TopRight => relative_position == RelativePosition::Top || relative_position == RelativePosition::Right,
-        EnnemyFacingDirection::BottomLeft => relative_position == RelativePosition::Bottom || relative_position == RelativePosition::Left,
-        EnnemyFacingDirection::BottomRight => relative_position == RelativePosition::Bottom || relative_position == RelativePosition::Right,
-        EnnemyFacingDirection::Up => relative_position == RelativePosition::Top,
-        EnnemyFacingDirection::Down => relative_position == RelativePosition::Bottom,
-        EnnemyFacingDirection::Left => relative_position == RelativePosition::Left,
-        EnnemyFacingDirection::Right => relative_position == RelativePosition::Right,
+        FacingDirection::TopLeft => relative_position == RelativePosition::Top || relative_position == RelativePosition::Left,
+        FacingDirection::TopRight => relative_position == RelativePosition::Top || relative_position == RelativePosition::Right,
+        FacingDirection::BottomLeft => relative_position == RelativePosition::Bottom || relative_position == RelativePosition::Left,
+        FacingDirection::BottomRight => relative_position == RelativePosition::Bottom || relative_position == RelativePosition::Right,
+        FacingDirection::Up => relative_position == RelativePosition::Top,
+        FacingDirection::Down => relative_position == RelativePosition::Bottom,
+        FacingDirection::Left => relative_position == RelativePosition::Left,
+        FacingDirection::Right => relative_position == RelativePosition::Right,
     }
 }
+
+pub fn update_collisionable_pos<T: EntityBehavior + Component>(
+    mut entity_query: &mut Query<(&mut CollisionComponent, &T)>,
+) {
+    for (mut collision_component, collisionable) in entity_query.iter_mut() {
+        collision_component.set_pos(collisionable.x(), collisionable.y());
+    }
+}
+

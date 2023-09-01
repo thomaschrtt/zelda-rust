@@ -5,6 +5,7 @@ mod setup;
 mod collisions;
 mod gui;
 mod ennemies;
+mod entitypattern;
 
 use bevy::prelude::*;
 use ennemies::EnnemyPlugin;

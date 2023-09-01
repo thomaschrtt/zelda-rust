@@ -1,9 +1,11 @@
 use bevy::prelude::*;
+use bevy::ui::update;
 use crate::collisions;
 use crate::constants::*;
 use crate::collisions::*;
 use crate::ennemies;
 use crate::ennemies::*;
+use crate::entitypattern::*;
 use crate::structures;
 use crate::structures::*;
 use crate::setup::*;
@@ -12,18 +14,6 @@ enum InteractionType {
     Tower,
     Sanctuary,
     Ennemy,
-}
-
-#[derive(PartialEq)]
-pub enum PlayerFacingDirection {
-    Left,
-    TopLeft,
-    Up,
-    TopRight,
-    Right,
-    BottomRight,
-    Down,
-    BottomLeft,
 }
 
 #[derive(PartialEq)]
@@ -54,7 +44,7 @@ impl Plugin for PlayerPlugin {
                                                     update_hitbox_pos,
                                                     update_hitbox_visibility,
                                                     ennemy_detection,
-                                                    update_collisionable_pos,
+                                                    update_collision,
                                                     update_player_state,
                                                 ));
     }
@@ -63,11 +53,8 @@ impl Plugin for PlayerPlugin {
 
 #[derive(Component)]
 pub struct Player {
-    x: f32,
-    y: f32,
-    facing_direction: PlayerFacingDirection,
+    self_entity: EntityPatern,
     state: PlayerState,
-    health: i32,
 
     idle_frame_counter: usize,
     idle_frame_time: f32,
@@ -96,11 +83,9 @@ pub struct Player {
 
 impl Player {
     pub fn new() -> Self {
-        Self { x: 0., 
-               y: 0., 
-               facing_direction: PlayerFacingDirection::Right, 
+        Self { 
+               self_entity: EntityPatern::new(0., 0., PLAYER_HITBOX_WIDTH * 0.8, PLAYER_HITBOX_HEIGHT * 0.8, PLAYER_HEALTH),
                state: PlayerState::Idle, 
-               health: PLAYER_HEALTH, 
                idle_frame_counter: 0, idle_frame_time: 0., 
                attack_frame_counter: 0, attack_frame_time: 0., 
                sprint_frame_counter: 0, sprint_frame_time: 0., 
@@ -111,36 +96,11 @@ impl Player {
              }
     }
 
-    fn take_damage(&mut self, damage: i32) {
-        self.health -= damage;
-        self.state = PlayerState::Damaged;
-        if self.health <= 0 {
-            self.state = PlayerState::Dying;
-        }
-    }
-
-    pub fn get_attacked(&mut self, damage: i32) -> bool {
-        if !self.is_aggroable() {
-            return false;
-        }
-        if self.is_blocking() {
-            println!("Player blocked the attack");
-            return false;
-        }
-        self.take_damage(damage);
-        println!("Player took {} damage", damage);
-        true
-    }
-
     pub fn is_aggroable(&self) -> bool {
         if self.is_dead() || self.is_healing() || self.is_dying() {
             return false;
         }
         true
-    }
-
-    fn attack(&mut self, ennemy: &mut Ennemy) -> bool {
-        return ennemy.get_attacked(PLAYER_DAMAGE);
     }
 
     fn is_idle(&self) -> bool {
@@ -182,8 +142,8 @@ impl Player {
 
 
     fn heal(&mut self) {
-        self.health += SANCTUARY_HEALING;
-        println!("Player health now at {}", self.health);
+        self.self_entity.add_health(SANCTUARY_HEALING);
+        println!("Player health now at {}", self.self_entity.health());
         self.state = PlayerState::Healing;
 
     }
@@ -191,12 +151,72 @@ impl Player {
 
 impl Collisionable for Player {
     fn get_pos(&self) -> (f32, f32) {
-        (self.x, self.y)
+        self.self_entity.get_pos()
     }
     fn get_hitbox(&self) -> (f32, f32, f32, f32) {
-        (self.x, self.y, PLAYER_HITBOX_WIDTH * 0.8, PLAYER_HITBOX_HEIGHT*0.8)
+        self.self_entity.get_hitbox()
     }
     
+}
+
+impl EntityBehavior for Player {
+    fn attack(&mut self, target: &mut dyn EntityBehavior) -> bool {
+        return target.get_attacked(PLAYER_DAMAGE);
+    }
+
+    fn get_attacked(&mut self, damage: i32) -> bool {
+        if !self.is_aggroable() {
+            return false;
+        }
+        if self.is_blocking() {
+            println!("Player blocked the attack");
+            return false;
+        }
+        self.take_damage(damage);
+        println!("Player took {} damage", damage);
+        true
+    }
+
+    fn take_damage(&mut self, damage: i32) -> bool {
+        self.self_entity.add_health(-damage);
+        self.state = PlayerState::Damaged;
+        if self.self_entity.health() <= 0 {
+            self.state = PlayerState::Dying;
+        }
+        true
+    }
+
+    fn x(&self) -> f32 {
+        self.self_entity.x()
+    }
+
+    fn y(&self) -> f32 {
+        self.self_entity.y()
+    }
+
+    fn set_x(&mut self, x: f32) {
+        self.self_entity.set_x(x);
+    }
+
+    fn set_y(&mut self, y: f32) {
+        self.self_entity.set_y(y);
+    }
+
+    fn facing_direction(&self) -> Option<FacingDirection> {
+        self.self_entity.facing_direction()
+    }
+
+    fn set_facing_direction(&mut self, facing_direction: FacingDirection) {
+        self.self_entity.set_facing_direction(facing_direction);
+    }
+
+    fn add_x(&mut self, x: f32) {
+        self.self_entity.add_x(x);
+    }
+
+    fn add_y(&mut self, y: f32) {
+        self.self_entity.add_y(y);
+    }
 }
 
 
@@ -213,7 +233,8 @@ fn spawn_player(mut commands: Commands,
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     let player: Player = Player::new();
-    let collisioncomponent = CollisionComponent::new(player.x, player.y, PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT);
+    let (x, y) = player.get_pos();
+    let collisioncomponent = CollisionComponent::new(x, y, PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT);
 
     let attack_delay = ennemies::AttackDelay::new(PLAYER_ATTACK_DELAY);
     
@@ -299,15 +320,15 @@ fn player_move(
     let top_boundary = right_boundary;
     let bottom_boundary = left_boundary;
 
-    let actual_x = player.x;
-    let actual_y = player.y;
+    let actual_x = player.x();
+    let actual_y = player.y();
 
-    let mut new_x = if keyboard_input.pressed(KeyCode::Left) { player.x - player_speed }
-                     else if keyboard_input.pressed(KeyCode::Right) { player.x + player_speed }
-                     else { player.x };
+    let mut new_x = if keyboard_input.pressed(KeyCode::Left) { player.x() - player_speed }
+                     else if keyboard_input.pressed(KeyCode::Right) { player.x() + player_speed }
+                     else { player.x() };
 
     for collidable in collisionable_query.iter() {
-        if player.would_collide(new_x, player.y, collidable){ 
+        if player.would_collide(new_x, player.y(), collidable){ 
             new_x = actual_x;
         }
     }
@@ -318,12 +339,12 @@ fn player_move(
         new_x = actual_x;
     }
 
-    let mut new_y = if keyboard_input.pressed(KeyCode::Down) { player.y - player_speed }
-                     else if keyboard_input.pressed(KeyCode::Up) { player.y + player_speed }
-                     else { player.y };
+    let mut new_y = if keyboard_input.pressed(KeyCode::Down) { player.y() - player_speed }
+                     else if keyboard_input.pressed(KeyCode::Up) { player.y() + player_speed }
+                     else { player.y() };
 
     for collidable in collisionable_query.iter() {
-        if player.would_collide(player.x, new_y, collidable){ 
+        if player.would_collide(player.x(), new_y, collidable){ 
             new_y = actual_y;
         }
     }
@@ -333,8 +354,8 @@ fn player_move(
     } else if new_y < bottom_boundary {
         new_y = actual_y;
     }
-    player.x = new_x;
-    player.y = new_y;
+    player.set_x(new_x);
+    player.set_y(new_y);
 }
 
 
@@ -347,30 +368,29 @@ fn player_facing_direction(
     if player.is_dead() {
         return;
     }
-
     if keyboard_input.pressed(KeyCode::Left) && keyboard_input.pressed(KeyCode::Up) {
-        player.facing_direction = PlayerFacingDirection::TopLeft;
-    }
-    else if keyboard_input.pressed(KeyCode::Right) && keyboard_input.pressed(KeyCode::Up) {
-        player.facing_direction = PlayerFacingDirection::TopRight;
+        player.set_facing_direction(FacingDirection::TopLeft)
     }
     else if keyboard_input.pressed(KeyCode::Left) && keyboard_input.pressed(KeyCode::Down) {
-        player.facing_direction = PlayerFacingDirection::BottomLeft;
+        player.set_facing_direction(FacingDirection::BottomLeft)
+    }
+    else if keyboard_input.pressed(KeyCode::Right) && keyboard_input.pressed(KeyCode::Up) {
+        player.set_facing_direction(FacingDirection::TopRight)
     }
     else if keyboard_input.pressed(KeyCode::Right) && keyboard_input.pressed(KeyCode::Down) {
-        player.facing_direction = PlayerFacingDirection::BottomRight;
+        player.set_facing_direction(FacingDirection::BottomRight)
     }
     else if keyboard_input.pressed(KeyCode::Left) {
-        player.facing_direction = PlayerFacingDirection::Left;
+        player.set_facing_direction(FacingDirection::Left)
     }
     else if keyboard_input.pressed(KeyCode::Right) {
-        player.facing_direction = PlayerFacingDirection::Right;
+        player.set_facing_direction(FacingDirection::Right)
     }
     else if keyboard_input.pressed(KeyCode::Up) {
-        player.facing_direction = PlayerFacingDirection::Up;
+        player.set_facing_direction(FacingDirection::Up)
     }
     else if keyboard_input.pressed(KeyCode::Down) {
-        player.facing_direction = PlayerFacingDirection::Down;
+        player.set_facing_direction(FacingDirection::Down)
     }
 }
 
@@ -484,18 +504,20 @@ fn update_player_pos(
 ) {
 
     let (player, mut sprite) = query.single_mut();
-    let x = player.x as f32;
-    let y = player.y as f32;
+    let x = player.x();
+    let y = player.y();
     sprite.translation.x = x;
     sprite.translation.y = y;
-    match player.facing_direction {
-        PlayerFacingDirection::Left => sprite.scale.x = -PLAYER_SPRITE_SCALE,
-        PlayerFacingDirection::TopLeft => sprite.scale.x = -PLAYER_SPRITE_SCALE,
-        PlayerFacingDirection::BottomLeft => sprite.scale.x = -PLAYER_SPRITE_SCALE,
-        PlayerFacingDirection::Right => sprite.scale.x = PLAYER_SPRITE_SCALE,
-        PlayerFacingDirection::TopRight => sprite.scale.x = PLAYER_SPRITE_SCALE,
-        PlayerFacingDirection::BottomRight => sprite.scale.x = PLAYER_SPRITE_SCALE,
-        _ => {}
+    if let Some(facing_direction) = &player.facing_direction() {
+        match facing_direction {
+            FacingDirection::Left => sprite.scale.x = -PLAYER_SPRITE_SCALE,
+            FacingDirection::TopLeft => sprite.scale.x = -PLAYER_SPRITE_SCALE,
+            FacingDirection::BottomLeft => sprite.scale.x = -PLAYER_SPRITE_SCALE,
+            FacingDirection::Right => sprite.scale.x = PLAYER_SPRITE_SCALE,
+            FacingDirection::TopRight => sprite.scale.x = PLAYER_SPRITE_SCALE,
+            FacingDirection::BottomRight => sprite.scale.x = PLAYER_SPRITE_SCALE,
+            _ => {}
+        }
     }
 }
 
@@ -505,8 +527,8 @@ fn update_hitbox_pos(
 ) {
     let player = player_query.single();
     for mut transform in hitbox_query.iter_mut() {
-        transform.translation.x = player.x;
-        transform.translation.y = player.y;
+        transform.translation.x = player.x();
+        transform.translation.y = player.y();
     }
 }
 
@@ -524,11 +546,10 @@ fn update_hitbox_visibility(
     }
 }
 
-fn update_collisionable_pos(
+fn update_collision(
     mut query: Query<(&mut CollisionComponent, &Player)>,
 ) {
-    let (mut collisionable, player) = query.single_mut();
-    collisionable.set_pos(player.x, player.y)
+    update_collisionable_pos::<Player>(&mut query);
 }
 
 fn can_interact_with(
@@ -578,7 +599,7 @@ fn tower_detection(
 ) {
     let player = player_query.single_mut();
     for tower in tower_query.iter() {
-        if can_interact_with(&player, &InteractionType::Tower, player.x, player.y + 1., Some(tower), None, None) {
+        if can_interact_with(&player, &InteractionType::Tower, player.x(), player.y() + 1., Some(tower), None, None) {
             if keyboard_input.just_pressed(KeyCode::Space) {
                 structures::show_one_sanctuary(query_sanctuary);
                 break;
@@ -594,10 +615,10 @@ fn sanctuary_detection(
 ) {
     let mut player = player_query.single_mut();
     for mut sanctuary in sanctuary_query.iter_mut() {
-        if can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y + 1., None, Some(&sanctuary), None) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x, player.y - 1., None, Some(&sanctuary), None) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x + 1., player.y, None, Some(&sanctuary), None) ||
-            can_interact_with(&player, &InteractionType::Sanctuary, player.x - 1., player.y, None, Some(&sanctuary), None) {
+        if can_interact_with(&player, &InteractionType::Sanctuary, player.x(), player.y() + 1., None, Some(&sanctuary), None) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x(), player.y() - 1., None, Some(&sanctuary), None) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x() + 1., player.y(), None, Some(&sanctuary), None) ||
+            can_interact_with(&player, &InteractionType::Sanctuary, player.x() - 1., player.y(), None, Some(&sanctuary), None) {
             if keyboard_input.just_pressed(KeyCode::Space) {
                 if sanctuary.unlock() {  
                     player.heal();
@@ -624,12 +645,13 @@ fn ennemy_detection(
             player.state = PlayerState::Idle;
         }
         for mut ennemy in ennemy_query.iter_mut() {
-            if can_interact_with(&player, &InteractionType::Ennemy, player.x, player.y + PLAYER_ATTACK_RANGE, None, None, Some(&ennemy)) ||
-                can_interact_with(&player, &InteractionType::Ennemy, player.x, player.y - PLAYER_ATTACK_RANGE, None, None, Some(&ennemy)) ||
-                can_interact_with(&player, &InteractionType::Ennemy, player.x + PLAYER_ATTACK_RANGE, player.y, None, None, Some(&ennemy)) ||
-                can_interact_with(&player, &InteractionType::Ennemy, player.x - PLAYER_ATTACK_RANGE, player.y, None, None, Some(&ennemy)) {
+            if can_interact_with(&player, &InteractionType::Ennemy, player.x(), player.y() + PLAYER_ATTACK_RANGE, None, None, Some(&ennemy)) ||
+                can_interact_with(&player, &InteractionType::Ennemy, player.x(), player.y() - PLAYER_ATTACK_RANGE, None, None, Some(&ennemy)) ||
+                can_interact_with(&player, &InteractionType::Ennemy, player.x() + PLAYER_ATTACK_RANGE, player.y(), None, None, Some(&ennemy)) ||
+                can_interact_with(&player, &InteractionType::Ennemy, player.x() - PLAYER_ATTACK_RANGE, player.y(), None, None, Some(&ennemy)) {
                 if keyboard_input.just_pressed(KeyCode::Space) {
-                    player.attack(&mut ennemy);
+                    let actual_ennemy: &mut ennemies::Ennemy = &mut ennemy;
+                    player.attack(actual_ennemy);
                     player.state = PlayerState::Attacking;
                     attack_delay.timer.reset();
                     break;
@@ -640,12 +662,12 @@ fn ennemy_detection(
 }
 
 fn tree_transparency(
-    player_query: Query<&Player>,
+    mut player_query: Query<&mut Player>,
     mut tree_query: Query<(&mut TextureAtlasSprite, &Transform), With<Tree>>,
 ) {
-    let player = player_query.single();
+    let player = player_query.single_mut();
     for (mut sprite, transform) in tree_query.iter_mut() {
-        if collisions::are_overlapping(player.x, player.y, PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT, transform.translation.x, transform.translation.y, TREE_WIDTH*0.6, TREE_HEIGHT*0.6) {
+        if collisions::are_overlapping(player.x(), player.y(), PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT, transform.translation.x, transform.translation.y, TREE_WIDTH*0.6, TREE_HEIGHT*0.6) {
             sprite.color.set_a(0.50);
         } else {
             sprite.color.set_a(1.0);

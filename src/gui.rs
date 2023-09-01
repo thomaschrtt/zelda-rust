@@ -77,14 +77,14 @@ fn update_gui_pos(mut query: Query<&mut GUI>,
 
 fn is_sanct_visible(sanct_x: f32, sanct_y: f32, cam_x: f32, cam_y: f32) -> bool {
     collisions::are_overlapping(sanct_x, sanct_y, SANCTUARY_WIDTH, SANCTUARY_HEIGHT, 
-                             cam_x, cam_y, CAMERA_DEFAULT_SIZE, CAMERA_DEFAULT_SIZE)
+                             cam_x, cam_y, CAMERA_DEFAULT_SCALE * WINDOW_WIDTH, CAMERA_DEFAULT_SCALE * WINDOW_HEIGHT)
 }
 
 fn get_gui_pos(sanct_post_x: f32, sanct_post_y: f32, cam_x: f32, cam_y: f32) -> (f32, f32) {
-    let pos_x_border = CAMERA_DEFAULT_SIZE/2.;
-    let pos_y_border = pos_x_border;
-    let neg_x_border = -pos_x_border;
-    let neg_y_border = neg_x_border;
+    let pos_x_border = CAMERA_DEFAULT_SCALE * WINDOW_WIDTH / 2. - 10.;
+    let neg_x_border = CAMERA_DEFAULT_SCALE * -WINDOW_WIDTH / 2. + 10.;
+    let pos_y_border = CAMERA_DEFAULT_SCALE * WINDOW_HEIGHT / 2. - 10.;
+    let neg_y_border = CAMERA_DEFAULT_SCALE * -WINDOW_HEIGHT / 2. + 10.;
 
     let ux = (sanct_post_x - cam_x) as f32;
     let uy = (sanct_post_y - cam_y) as f32;

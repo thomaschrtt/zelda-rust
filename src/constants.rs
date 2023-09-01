@@ -1,8 +1,8 @@
 // WINDOW
-pub const WINDOW_SIZE: f32 = 600.;
+pub const WINDOW_WIDTH: f32 = 1920.;
+pub const WINDOW_HEIGHT: f32 = 1080.;
 pub const MAP_SIZE: f32 = 1400.;
 pub const CAMERA_DEFAULT_SCALE: f32 = 0.3;
-pub const CAMERA_DEFAULT_SIZE: f32 = WINDOW_SIZE * CAMERA_DEFAULT_SCALE;
 pub const CAMERA_MIN_SCALE: f32 = 0.1;
 pub const CAMERA_MAX_SCALE: f32 = 1.;
 
@@ -33,7 +33,7 @@ pub const SANCTUARY_NB: i32 = 10;
 pub const SANCTUARY_HEALING: i32 = 5;
 
 // ENNEMIES
-pub const ENNEMIES_NUMBER: i32 = 15;
+pub const ENNEMIES_NUMBER: i32 = 45;
 pub const ENNEMY_SPRITE_SIZE: f32 = 32.;
 pub const ENNEMY_SPRITE_SCALE: f32 = 0.5;
 pub const ENNEMY_HITBOX_WIDTH: f32 = ENNEMY_SPRITE_SIZE * ENNEMY_SPRITE_SCALE;

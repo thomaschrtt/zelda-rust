@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowMode};
 use rand::Rng;
 use crate::{constants::*, player::*};
 
@@ -9,14 +9,7 @@ pub fn setup(
     mut windows: Query<&mut Window>
 ) {
     let mut window = windows.single_mut();
-    window.resolution.set(WINDOW_SIZE, WINDOW_SIZE);
-    window.resize_constraints = WindowResizeConstraints {
-        min_width: WINDOW_SIZE,
-        max_width: WINDOW_SIZE,
-        min_height: WINDOW_SIZE,
-        max_height: WINDOW_SIZE,
-    };
-    window.resizable = false;
+    window.mode = WindowMode::BorderlessFullscreen;
 
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
@@ -67,15 +60,16 @@ pub fn track_player(
     let mut camera_transform = camera.single_mut().1;
     let camera_projection = camera_proj.single_mut();
 
-    let camera_range = camera_projection.scale * WINDOW_SIZE / 2.;
+    let camera_range_height = camera_projection.scale * WINDOW_HEIGHT / 2.;
+    let camera_range_width = camera_projection.scale * WINDOW_WIDTH / 2.;
     
     let x = player_transform.translation.x;
     let y = player_transform.translation.y;
 
-    let camera_max_x = MAP_SIZE / 2. - camera_range;
-    let camera_min_x = -MAP_SIZE / 2. + camera_range;
-    let camera_max_y = MAP_SIZE / 2. - camera_range;
-    let camera_min_y = -MAP_SIZE / 2. + camera_range;
+    let camera_max_x = MAP_SIZE / 2. - camera_range_width;
+    let camera_min_x = -MAP_SIZE / 2. + camera_range_width;
+    let camera_max_y = MAP_SIZE / 2. - camera_range_height;
+    let camera_min_y = -MAP_SIZE / 2. + camera_range_height;
 
     camera_transform.translation.x = if x > camera_max_x { camera_max_x } else if x < camera_min_x { camera_min_x } else { x };
     camera_transform.translation.y = if y > camera_max_y { camera_max_y } else if y < camera_min_y { camera_min_y } else { y };
@@ -98,7 +92,6 @@ pub fn setup_random_trees(
         let x = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
         let y = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
         let index = rng.gen_range(0..3);
-        println!("x: {}, y: {}, index: {}", x, y, index);
         commands.spawn(SpriteSheetBundle {
             texture_atlas: tree_texture_atlas_handle.clone(),
             transform: Transform {
@@ -128,7 +121,6 @@ pub fn setup_random_bushes(
         let x = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
         let y = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
         let index = rng.gen_range(0..3);
-        println!("x: {}, y: {}, index: {}", x, y, index);
         commands.spawn(SpriteSheetBundle {
             texture_atlas: bush_texture_atlas_handle.clone(),
             transform: Transform {

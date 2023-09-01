@@ -13,6 +13,7 @@ use crate::player::*;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum EnnemyState {
+    Loading,
     Idle,
     Roaming,
     Chasing,
@@ -29,7 +30,8 @@ pub struct EnnemyPlugin;
 impl Plugin for EnnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, summon_ennemies)
-            .add_systems(Update, (update_ennemy_position, 
+            .add_systems(Update, (game_ready.run_if(run_once()),
+                                                    update_ennemy_position, 
                                                     update_ennemy_hitbox,
                                                     ennemy_attack, 
                                                     despawn_on_death,
@@ -91,7 +93,7 @@ impl Ennemy {
             self_entity: EntityPatern::new(x, y, ENNEMY_HITBOX_WIDTH, ENNEMY_HITBOX_HEIGHT, health),
             current_speed: ENNEMY_NORMAL_SPEED,
             direction_counter: 0,
-            state: EnnemyState::Roaming,
+            state: EnnemyState::Loading,
             attack,
             defense_ratio,
 
@@ -183,6 +185,7 @@ impl Ennemy {
 
 
     fn chase_player(&mut self, player: &Player, collision_query: &Query<&CollisionComponent, Without<Ennemy>>) {
+        self.state = EnnemyState::Chasing;
         let (x, y) = player.get_pos();
         let dx = x - self.x();  // Difference in x positions
         let dy = y - self.y();  // Difference in y positions
@@ -237,7 +240,7 @@ impl Ennemy {
         if self.direction_counter <= 0 {
             // Choisir une nouvelle direction
             let mut rng = rand::thread_rng();
-            let direction = rng.gen_range(0..8);
+            let direction = rng.gen_range(0..17);
             new_direction = Some(match direction {
                 0 => FacingDirection::Up,
                 1 => FacingDirection::Down,
@@ -247,15 +250,20 @@ impl Ennemy {
                 5 => FacingDirection::TopRight,
                 6 => FacingDirection::BottomLeft,
                 7 => FacingDirection::BottomRight,
-                _ => FacingDirection::Up, // ou un autre par défaut
+                _ => {self.state = EnnemyState::Idle; FacingDirection::Up},
             });
+            if direction < 8 {
+                self.state = EnnemyState::Roaming;
+            }
             self.direction_counter = rng.gen_range(25..50); // changer de direction après 50 à 100 itérations
         }
         else {
             new_direction = self.facing_direction().clone();
         }
-        if let Some(ref direction) = new_direction{
-            self.move_in_direction(direction, self.current_speed, collision_query);
+        if !self.is_idle() {
+            if let Some(ref direction) = new_direction{
+                self.move_in_direction(direction, self.current_speed, collision_query);
+            }
         }
 
         self.direction_counter -= 1;
@@ -284,6 +292,14 @@ impl Ennemy {
 
     fn is_dead(&self) -> bool {
         self.state == EnnemyState::Dead
+    }
+
+    fn is_loading(&self) -> bool {
+        self.state == EnnemyState::Loading
+    }
+
+    fn is_idle(&self) -> bool {
+        self.state == EnnemyState::Idle
     }
 }
 
@@ -438,7 +454,7 @@ fn ennemy_attack(
 ) {
     let mut player = player_query.single_mut();
     for mut ennemy in ennemy_query.iter_mut() {
-        if !ennemy.is_blocking() && !ennemy.is_dying() && !ennemy.is_dead() {
+        if !ennemy.is_blocking() && !ennemy.is_dying() && !ennemy.is_dead() && !ennemy.is_loading() {
             if let Some(direction) = ennemy.facing_direction() {
                 let actual_player: &mut Player = &mut player;
                 match direction {
@@ -510,11 +526,9 @@ fn ennemy_aggro_detection(
         let distance = transform.translation.distance(player_transform.translation);
         if !ennemy.is_doing_something() {
             if distance < ENNEMY_AGGRO_DISTANCE && player.is_aggroable() {
-                ennemy.state = EnnemyState::Chasing;
                 ennemy.chase_player(&player, &collision_query);
             
             } else {
-                ennemy.state = EnnemyState::Roaming;
                 ennemy.roaming(&collision_query);
             }
         }    
@@ -543,7 +557,23 @@ fn state_speed_update(
     for (mut ennemy, mut sprite, mut texture) in query.iter_mut() {
         match ennemy.state {
             EnnemyState::Idle => {
-                sprite.index = 0;
+                let texture_handle = asset_server.load("Skeleton/Idle.png");
+                let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(150., 150.), 4, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
+                let texture_atlas_handle = texture_atlases.add(texture_atlas);
+
+                *texture = texture_atlas_handle.clone();
+                
+                ennemy.roaming_frame_time += time.delta_seconds();
+                if ennemy.roaming_frame_time >= 0.3 {
+                    ennemy.roaming_frame_counter += 1;
+                    ennemy.roaming_frame_time = 0.;
+                }
+
+                if ennemy.roaming_frame_counter >= 4 {
+                    ennemy.roaming_frame_counter = 0;
+                }
+
+                sprite.index = ennemy.roaming_frame_counter;
             },
             EnnemyState::Roaming => {
                 
@@ -669,6 +699,9 @@ fn state_speed_update(
             EnnemyState::Dead => {
                 sprite.index = 3;
             },
+            EnnemyState::Loading => {
+                sprite.index = 0;
+            },
         }
     }
 }
@@ -699,6 +732,16 @@ fn change_sprite_orientation(
                 },
                 _ => (),
             }
+        }
+    }
+}
+
+fn game_ready(
+    mut ennemy_query: Query<&mut Ennemy>,
+) {
+    for mut ennemy in ennemy_query.iter_mut() {
+        if ennemy.is_loading() {
+            ennemy.state = EnnemyState::Roaming;
         }
     }
 }

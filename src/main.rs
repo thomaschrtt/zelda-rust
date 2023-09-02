@@ -16,7 +16,7 @@ use crate::gui::*;
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, PlayerPlugin, StructuresPlugin, GUIPlugin, EnnemyPlugin))
-        .add_systems(Startup, (setup::setup, setup::setup_random_trees, setup::setup_random_bushes))
-        .add_systems(Update, (setup::zoom_camera, setup::track_player))
+        .add_systems(Startup, (setup::setup, setup::setup_random_trees, setup::setup_random_bushes, setup::setup_random_graves))
+        .add_systems(Update, (setup::zoom_camera, setup::track_player,))
         .run();
 }

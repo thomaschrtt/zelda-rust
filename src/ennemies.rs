@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use rand::Rng;
+use rand::prelude::*;
 
 use crate::collisions;
 use crate::constants::*;
@@ -224,7 +224,8 @@ impl Ennemy {
         let new_direction: Option<FacingDirection>;
         if self.direction_counter <= 0 {
             // Choisir une nouvelle direction
-            let mut rng = rand::thread_rng();
+            let mut rng = StdRng::seed_from_u64(SEED);
+
             let direction = rng.gen_range(0..17);
             new_direction = Some(match direction {
                 0 => FacingDirection::Up,
@@ -377,7 +378,7 @@ fn summon_ennemy(
 
 
 
-    let mut rng = rand::thread_rng();
+    let mut rng = StdRng::seed_from_u64(SEED);
 
     let max_value_x = MAP_SIZE / 2. - SANCTUARY_WIDTH / 2.;
     let max_value_y = MAP_SIZE / 2. - SANCTUARY_HEIGHT / 2.;

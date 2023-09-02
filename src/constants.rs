@@ -1,3 +1,5 @@
+pub const SEED: u64 = 2;
+
 // WINDOW
 pub const WINDOW_WIDTH: f32 = 1920.;
 pub const WINDOW_HEIGHT: f32 = 1080.;
@@ -29,11 +31,11 @@ pub const TOWER_HEIGHT: f32 = 128.;
 pub const TOWER_WIDTH: f32 = 67.;
 pub const SANCTUARY_HEIGHT: f32 = 75.;
 pub const SANCTUARY_WIDTH: f32 = 96.;
-pub const SANCTUARY_NB: i32 = 10;
+pub const SANCTUARY_NB: i32 = 3;
 pub const SANCTUARY_HEALING: i32 = 5;
 
 // ENNEMIES
-pub const ENNEMIES_NUMBER: i32 = 45;
+pub const ENNEMIES_NUMBER: i32 = 1;
 pub const ENNEMY_SPRITE_SIZE: f32 = 32.;
 pub const ENNEMY_SPRITE_SCALE: f32 = 0.5;
 pub const ENNEMY_HITBOX_WIDTH: f32 = ENNEMY_SPRITE_SIZE * ENNEMY_SPRITE_SCALE;
@@ -45,7 +47,12 @@ pub const ENNEMY_ATTACK_RANGE: f32 = 5.;
 pub const ENNEMY_AGGRO_DISTANCE: f32 = 120.;
 
 // OTHERS
-pub const TREE_HEIGHT: f32 = 140.;
-pub const TREE_WIDTH: f32 = 115.;
+pub const TREE_HEIGHT: f32 = 160.;
+pub const TREE_WIDTH: f32 = 128.;
+pub const TREE_TRANSPARENCY: f32 = 0.6;
+pub const TREE_NUMBER: i32 = 100;
 pub const BUSH_HEIGHT: f32 = 50.;
 pub const BUSH_WIDTH: f32 = 55.;
+pub const BUSH_TRANSPARENCY: f32 = 0.6;
+pub const BUSH_NUMBER: i32 = 100;
+pub const GRAVES_NUMBER: i32 = 25;

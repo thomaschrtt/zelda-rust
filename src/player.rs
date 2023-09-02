@@ -22,12 +22,13 @@ impl Plugin for PlayerPlugin {
                                                     update_player_sprite,
                                                     tower_detection,
                                                     sanctuary_detection,
-                                                    tree_transparency,
+                                                    background_elements_transparency,
                                                     update_hitbox_pos,
                                                     update_hitbox_visibility,
                                                     ennemy_detection,
                                                     update_collision,
                                                     update_player_state,
+                                                    slide_if_inside_anything
                                                 ));
     }
 }
@@ -702,13 +703,25 @@ fn ennemy_detection(
     }
 }
 
-fn tree_transparency(
+pub fn background_elements_transparency(
     mut player_query: Query<&mut Player>,
-    mut tree_query: Query<(&mut TextureAtlasSprite, &Transform), With<Tree>>,
+    mut background_objects: Query<(&mut TextureAtlasSprite, &Transform, &BackgroundObjects)>,
 ) {
     let player = player_query.single_mut();
-    for (mut sprite, transform) in tree_query.iter_mut() {
-        if collisions::are_overlapping(player.x(), player.y(), PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT, transform.translation.x, transform.translation.y, TREE_WIDTH*0.6, TREE_HEIGHT*0.6) {
+    for (mut sprite, transform, obj) in background_objects.iter_mut() {
+        let (x, y) = player.get_pos();
+        let (bg_obj_width, bg_obj_height) = (
+            match obj.get_type() {
+            BackgroundObjectType::Tree => TREE_WIDTH*TREE_TRANSPARENCY,
+            BackgroundObjectType::Bush => BUSH_WIDTH*BUSH_TRANSPARENCY,
+            _ => 0.,
+        }, match obj.get_type() {
+            BackgroundObjectType::Tree => TREE_HEIGHT*TREE_TRANSPARENCY,
+            BackgroundObjectType::Bush => BUSH_HEIGHT*BUSH_TRANSPARENCY,
+            _ => 0.,
+        });
+
+        if collisions::are_overlapping(x, y, PLAYER_HITBOX_WIDTH, PLAYER_HITBOX_HEIGHT, transform.translation.x, transform.translation.y, bg_obj_width, bg_obj_height) {
             sprite.color.set_a(0.50);
         } else {
             sprite.color.set_a(1.0);
@@ -716,3 +729,16 @@ fn tree_transparency(
     }
 }
 
+
+fn slide_if_inside_anything(
+    mut player_query: Query<&mut Player>,
+    mut collisionable_query: Query<&mut CollisionComponent, Without<Player>>,
+) {
+    let mut player = player_query.single_mut();
+    let (x,y) = player.get_pos();
+    for mut collidable in collisionable_query.iter_mut() {
+        if player.would_collide(x, y, &collidable) {
+            player.set_x(x + 1.);
+        }
+    }
+}

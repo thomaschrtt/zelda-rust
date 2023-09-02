@@ -1,5 +1,6 @@
+use bevy::ecs::query;
 use bevy::prelude::*;
-use rand::Rng;
+use rand::prelude::*;
 use crate::constants::*;
 use crate::collisions::*;
 
@@ -54,8 +55,8 @@ impl Sanctuary {
     pub fn new(x: f32, y: f32) -> Self {
         Sanctuary { x, y, visibility: true, unlocked: false }
     }
-    pub fn new_random_position() -> Self {
-        let mut rng = rand::thread_rng();
+    pub fn new_random_position(seed: u64) -> Self {
+        let mut rng = StdRng::seed_from_u64(seed);
 
         let max_value_x = MAP_SIZE / 2. - SANCTUARY_WIDTH / 2.;
         let max_value_y = MAP_SIZE / 2. - SANCTUARY_HEIGHT / 2.;
@@ -118,7 +119,7 @@ fn setup_sanctuary(
 
     for _ in 0..SANCTUARY_NB {
         if let Some(sanctuary) = (0..10)
-            .map(|_| Sanctuary::new_random_position())
+            .map(|_| Sanctuary::new_random_position(SEED + added_sanctuaries.len() as u64 + collision_query.iter().count() as u64 + 1))
             .find(|sanct| !does_collide_with_existing(sanct, &collision_query, &added_sanctuaries)) {
 
             let collision_component = CollisionComponent::new_from_component(&sanctuary);
@@ -132,7 +133,9 @@ fn setup_sanctuary(
             })
             .insert(collision_component)
             .insert(sanctuary);
+            println!("Sanctuaire ajouté");
         }
+
     }
 }
 
@@ -145,7 +148,7 @@ pub fn setup_structures(
 ) {
     let tower_texture_handle = asset_server.load("tower.png");
 
-    let mut rng = rand::thread_rng();
+    let mut rng = StdRng::seed_from_u64(SEED);
     let x = rng.gen_range(-MAP_SIZE / 2. + TOWER_WIDTH..MAP_SIZE / 2. - TOWER_WIDTH);
     let y = rng.gen_range(-MAP_SIZE / 2. + TOWER_HEIGHT + PLAYER_HITBOX_HEIGHT..MAP_SIZE / 2. - TOWER_HEIGHT);
 
@@ -220,7 +223,7 @@ fn hide_all_sanctuaries(mut query: Query<&mut Sanctuary>) {
 pub fn show_one_sanctuary(mut query: Query<&mut Sanctuary>) {
     if are_all_visible_sanctuaries_unlocked(&query) {
 
-        let mut rng = rand::thread_rng();
+        let mut rng = StdRng::seed_from_u64(SEED);
         let mut sanctuaries: Vec<_> = query.iter_mut().filter(|sanctuary| !sanctuary.visibility).collect();
         let len = sanctuaries.len();
 

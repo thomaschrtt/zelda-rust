@@ -736,7 +736,7 @@ fn slide_if_inside_anything(
 ) {
     let mut player = player_query.single_mut();
     let (x,y) = player.get_pos();
-    for mut collidable in collisionable_query.iter_mut() {
+    for collidable in collisionable_query.iter_mut() {
         if player.would_collide(x, y, &collidable) {
             player.set_x(x + 1.);
         }

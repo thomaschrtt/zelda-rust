@@ -1,4 +1,3 @@
-use bevy::ecs::query;
 use bevy::prelude::*;
 use rand::prelude::*;
 use crate::constants::*;
@@ -119,7 +118,7 @@ fn setup_sanctuary(
 
     for _ in 0..SANCTUARY_NB {
         if let Some(sanctuary) = (0..10)
-            .map(|_| Sanctuary::new_random_position(SEED + added_sanctuaries.len() as u64 + collision_query.iter().count() as u64 + 1))
+            .map(|_| Sanctuary::new_random_position(SEED + OFFSET_SANCTUARY + added_sanctuaries.len() as u64))
             .find(|sanct| !does_collide_with_existing(sanct, &collision_query, &added_sanctuaries)) {
 
             let collision_component = CollisionComponent::new_from_component(&sanctuary);
@@ -148,7 +147,7 @@ pub fn setup_structures(
 ) {
     let tower_texture_handle = asset_server.load("tower.png");
 
-    let mut rng = StdRng::seed_from_u64(SEED);
+    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_TOWER);
     let x = rng.gen_range(-MAP_SIZE / 2. + TOWER_WIDTH..MAP_SIZE / 2. - TOWER_WIDTH);
     let y = rng.gen_range(-MAP_SIZE / 2. + TOWER_HEIGHT + PLAYER_HITBOX_HEIGHT..MAP_SIZE / 2. - TOWER_HEIGHT);
 

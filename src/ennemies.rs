@@ -224,7 +224,7 @@ impl Ennemy {
         let new_direction: Option<FacingDirection>;
         if self.direction_counter <= 0 {
             // Choisir une nouvelle direction
-            let mut rng = StdRng::seed_from_u64(SEED);
+            let mut rng = rand::thread_rng();
 
             let direction = rng.gen_range(0..17);
             new_direction = Some(match direction {
@@ -369,7 +369,8 @@ impl EntityBehavior for Ennemy {
 fn summon_ennemy(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>, 
-    texture_atlases: &mut ResMut<Assets<TextureAtlas>>
+    texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
+    nb: i32
 ) {
     
     let texture_handle = asset_server.load("Skeleton/Idle.png");
@@ -378,7 +379,7 @@ fn summon_ennemy(
 
 
 
-    let mut rng = StdRng::seed_from_u64(SEED);
+    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_ENNEMY + nb as u64);
 
     let max_value_x = MAP_SIZE / 2. - SANCTUARY_WIDTH / 2.;
     let max_value_y = MAP_SIZE / 2. - SANCTUARY_HEIGHT / 2.;
@@ -414,8 +415,8 @@ fn summon_ennemies(
     asset_server: Res<AssetServer>, 
     mut texture_atlases: ResMut<Assets<TextureAtlas>>
 ) {
-    for _ in 0..ENNEMIES_NUMBER {
-        summon_ennemy(&mut commands, &asset_server, &mut texture_atlases);
+    for i in 0..ENNEMIES_NUMBER {
+        summon_ennemy(&mut commands, &asset_server, &mut texture_atlases , i);
     }
 }
 

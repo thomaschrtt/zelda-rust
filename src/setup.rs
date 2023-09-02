@@ -1,6 +1,6 @@
 use bevy::{prelude::*, window::WindowMode};
 use rand::prelude::*;
-use crate::{constants::*, player::*, collisions::{CollisionComponent, Collisionable, self}};
+use crate::{constants::*, player::*, collisions::{CollisionComponent, Collisionable}};
 
 
 pub fn setup(
@@ -106,7 +106,7 @@ pub fn setup_random_trees(
     let tree_texture_atlas = TextureAtlas::from_grid(tree_texture_handle, Vec2::new(TREE_WIDTH, TREE_HEIGHT), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(3., 0.)));
     let tree_texture_atlas_handle = texture_atlases.add(tree_texture_atlas);
 
-    let mut rng = StdRng::seed_from_u64(SEED + collisionable_query.iter().len() as u64);
+    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_TREE);
 
     for _ in 0..TREE_NUMBER {
         let mut x;
@@ -146,7 +146,7 @@ pub fn setup_random_bushes(
     let bush_texture_atlas = TextureAtlas::from_grid(bush_texture_handle, Vec2::new(BUSH_WIDTH, BUSH_HEIGHT), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
     let bush_texture_atlas_handle = texture_atlases.add(bush_texture_atlas);
 
-    let mut rng = StdRng::seed_from_u64(SEED + TREE_NUMBER as u64 );
+    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_BUSH );
     for _ in 0..BUSH_NUMBER {
         let x = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
         let y = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
@@ -174,7 +174,7 @@ pub fn setup_random_graves(
     let big_grave_texture_atlas = TextureAtlas::from_grid(big_grave_texture_handle, Vec2::new(64., 64.), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
     let big_grave_texture_atlas_handle = texture_atlases.add(big_grave_texture_atlas);
 
-    let mut rng = StdRng::seed_from_u64(SEED + TREE_NUMBER as u64 + BUSH_NUMBER as u64);
+    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_GRAVE);
     for _ in 0..GRAVES_NUMBER {
         let mut x = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
         let mut y = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);

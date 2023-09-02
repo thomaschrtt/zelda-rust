@@ -35,7 +35,7 @@ pub const SANCTUARY_NB: i32 = 3;
 pub const SANCTUARY_HEALING: i32 = 5;
 
 // ENNEMIES
-pub const ENNEMIES_NUMBER: i32 = 1;
+pub const ENNEMIES_NUMBER: i32 = 45;
 pub const ENNEMY_SPRITE_SIZE: f32 = 32.;
 pub const ENNEMY_SPRITE_SCALE: f32 = 0.5;
 pub const ENNEMY_HITBOX_WIDTH: f32 = ENNEMY_SPRITE_SIZE * ENNEMY_SPRITE_SCALE;
@@ -56,3 +56,14 @@ pub const BUSH_WIDTH: f32 = 55.;
 pub const BUSH_TRANSPARENCY: f32 = 0.6;
 pub const BUSH_NUMBER: i32 = 100;
 pub const GRAVES_NUMBER: i32 = 25;
+
+
+// RNG OFFSETS
+pub const OFFSET_TREE: u64 = 0;
+pub const OFFSET_BUSH: u64 = 1000;
+pub const OFFSET_GRAVE: u64 = 2000;
+pub const OFFSET_ENNEMY: u64 = 3000;
+pub const OFFSET_SANCTUARY: u64 = 4000;
+pub const OFFSET_TOWER: u64 = 5000;
+
+

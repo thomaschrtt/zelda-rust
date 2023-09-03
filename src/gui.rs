@@ -1,14 +1,14 @@
 use bevy::prelude::*;
-use crate::{constants::*, structures::Sanctuary, collisions::{*, self}};
+use crate::{constants::*, structures::Sanctuary, collisions::{*, self}, GameState};
 
 pub struct GUIPlugin;
 
 impl Plugin for GUIPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_gui)
+        app.add_systems(OnExit(GameState::Menu), setup_gui)
             .add_systems(Update, (update_visibility, 
                                                     update_gui_pos,
-                                                    update_display_pos));
+                                                    update_display_pos).distributive_run_if(in_state(GameState::Playing)));
     }
 }
 

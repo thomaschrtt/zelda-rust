@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use rand::prelude::*;
 
+use crate::GameState;
 use crate::collisions;
 use crate::constants::*;
 use crate::collisions::*;
@@ -27,7 +28,7 @@ pub struct EnnemyPlugin;
 
 impl Plugin for EnnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, summon_ennemies)
+        app.add_systems(OnExit(GameState::Menu), summon_ennemies)
             .add_systems(Update, (game_ready.run_if(run_once()),
                                                     update_ennemy_position, 
                                                     update_ennemy_hitbox,
@@ -36,7 +37,7 @@ impl Plugin for EnnemyPlugin {
                                                     ennemy_aggro_detection,
                                                     state_speed_update,
                                                     update_ennemy_sprite,
-                                                    change_sprite_orientation));  
+                                                    change_sprite_orientation).run_if(in_state(GameState::Playing)));  
     }
 }
 

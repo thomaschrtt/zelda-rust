@@ -1,26 +1,27 @@
 use bevy::{prelude::*, window::WindowMode};
 use rand::prelude::*;
-use crate::{constants::*, player::*, collisions::{CollisionComponent, Collisionable}};
+use crate::{constants::*, player::*, collisions::{CollisionComponent, Collisionable}, GameState};
+
+
+pub struct SetupPlugin;
+
+impl Plugin for SetupPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(OnExit(GameState::Menu), (setup, 
+                                                    setup_random_trees, 
+                                                    setup_random_bushes, 
+                                                    setup_random_graves, ))
+            .add_systems(Update, (zoom_camera, 
+                                                   track_player,
+                                                   ).run_if(in_state(GameState::Playing)));
+    }
+}
 
 
 pub fn setup(
     mut commands: Commands, 
-    asset_server: Res<AssetServer>, 
-    mut windows: Query<&mut Window>
+    asset_server: Res<AssetServer>,
 ) {
-    let mut window = windows.single_mut();
-    window.mode = WindowMode::BorderlessFullscreen;
-    window.title = "Zelda".to_string();
-
-    commands.spawn(Camera2dBundle {
-        projection: OrthographicProjection {
-            scale : CAMERA_DEFAULT_SCALE,
-            far: Z_LAYER_GUI,
-            ..OrthographicProjection::default()
-        },
-        ..Default::default()
-    });
-
     commands.spawn(SpriteBundle {
         texture: asset_server.load("background.png"),
         transform: Transform {

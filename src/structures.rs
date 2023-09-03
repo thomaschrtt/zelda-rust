@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use rand::prelude::*;
+use crate::GameState;
 use crate::constants::*;
 use crate::collisions::*;
 
@@ -7,14 +8,14 @@ pub struct StructuresPlugin;
 
 impl Plugin for StructuresPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_structures)
-            .add_systems(Update, (update_structures_pos, 
-                                                    remove_sanctuaries_colliding_with_tower, 
+        app.add_systems(OnExit(GameState::Menu), setup_structures)
+            .add_systems(Update, (update_structures_pos,  
                                                     update_visibility, 
                                                     change_visibility_with_keybinding, 
-                                                    update_collision_component, 
-                                                    hide_all_sanctuaries.run_if(run_once()),
-                                                    update_sanctuary_color));
+                                                    update_collision_component,
+                                                    update_sanctuary_color,
+                                                
+                                            ).distributive_run_if(in_state(GameState::Playing)));
     }
 }
 
@@ -117,12 +118,14 @@ fn setup_sanctuary(
     let mut added_sanctuaries = Vec::new();
 
     for _ in 0..SANCTUARY_NB {
-        if let Some(sanctuary) = (0..10)
+        if let Some(mut sanctuary) = (0..10)
             .map(|_| Sanctuary::new_random_position(SEED + OFFSET_SANCTUARY + added_sanctuaries.len() as u64))
             .find(|sanct| !does_collide_with_existing(sanct, &collision_query, &added_sanctuaries)) {
 
             let collision_component = CollisionComponent::new_from_component(&sanctuary);
             added_sanctuaries.push(collision_component.clone());
+
+            sanctuary.visibility = false;
 
             commands.spawn(SpriteSheetBundle {
                 texture_atlas: texture_atlas_handle.clone(),
@@ -168,21 +171,8 @@ pub fn setup_structures(
     .insert(tower)
     .insert(collisioncomponent);
 
-}
+    
 
-
-fn remove_sanctuaries_colliding_with_tower(
-    mut commands: Commands, 
-    tower: Query<&Tower>,
-    mut sanctuary_query: Query<(Entity, &Sanctuary, &CollisionComponent)>) 
-    {
-        for towers in tower.iter() {
-            for (entity, _, collision_component) in sanctuary_query.iter_mut() {
-                if towers.would_collide_with(collision_component) {
-                    commands.entity(entity).despawn();
-                }
-            }
-        }
 }
 
 fn update_structures_pos(mut query: Query<(&mut Transform, &Tower)>) {
@@ -214,11 +204,6 @@ fn update_collision_component(mut query: Query<(&mut CollisionComponent, &Sanctu
     }
 }
 
-fn hide_all_sanctuaries(mut query: Query<&mut Sanctuary>) {
-    for mut sanctuary in query.iter_mut() {
-        sanctuary.visibility = false;
-    }
-}
 pub fn show_one_sanctuary(mut query: Query<&mut Sanctuary>) {
     if are_all_visible_sanctuaries_unlocked(&query) {
 

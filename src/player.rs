@@ -10,12 +10,13 @@ use crate::entitypattern::*;
 use crate::structures;
 use crate::structures::*;
 use crate::setup::*;
+use crate::GameState;
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_player)
+        app.add_systems(OnExit(GameState::Menu), spawn_player)
             .add_systems(Update, (player_move, 
                                                     update_player_pos, 
                                                     player_facing_direction, 
@@ -28,8 +29,9 @@ impl Plugin for PlayerPlugin {
                                                     ennemy_detection,
                                                     update_collision,
                                                     update_player_state,
-                                                    slide_if_inside_anything
-                                                ));
+                                                    slide_if_inside_anything,
+                                                    switch_to_game_over
+                                                ).run_if(in_state(GameState::Playing)));
     }
 }
 
@@ -538,6 +540,16 @@ fn update_player_sprite(
                 player.damaged_duration_elapsed = 0.;
             }
         }
+    }
+}
+
+fn switch_to_game_over(
+    mut nextstate : ResMut<NextState<GameState>>,
+    player_query: Query<&Player>
+) {
+    let player = player_query.single();
+    if player.is_dead() {
+        nextstate.set(GameState::GameOver);
     }
 }
 

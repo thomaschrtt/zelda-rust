@@ -1,4 +1,4 @@
-pub const SEED: u64 = 100;
+pub const DEFAULT_SEED: u64 = 100;
 
 // WINDOW
 pub const WINDOW_WIDTH: f32 = 1920.;

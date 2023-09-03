@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use rand::prelude::*;
 
+use crate::GameConfig;
 use crate::GameState;
 use crate::collisions;
 use crate::constants::*;
@@ -371,6 +372,7 @@ fn summon_ennemy(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>, 
     texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
+    game_config: &Res<GameConfig>,
     nb: i32
 ) {
     
@@ -380,7 +382,7 @@ fn summon_ennemy(
 
 
 
-    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_ENNEMY + nb as u64);
+    let mut rng = StdRng::seed_from_u64(game_config.seed + OFFSET_ENNEMY + nb as u64);
 
     let max_value_x = MAP_SIZE / 2. - SANCTUARY_WIDTH / 2.;
     let max_value_y = MAP_SIZE / 2. - SANCTUARY_HEIGHT / 2.;
@@ -414,10 +416,11 @@ fn summon_ennemy(
 fn summon_ennemies(
     mut commands: Commands,
     asset_server: Res<AssetServer>, 
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    game_config: Res<GameConfig>,
 ) {
     for i in 0..ENNEMIES_NUMBER {
-        summon_ennemy(&mut commands, &asset_server, &mut texture_atlases , i);
+        summon_ennemy(&mut commands, &asset_server, &mut texture_atlases, &game_config, i);
     }
 }
 

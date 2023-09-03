@@ -1,6 +1,6 @@
 use bevy::{prelude::*, window::WindowMode};
 use rand::prelude::*;
-use crate::{constants::*, player::*, collisions::{CollisionComponent, Collisionable}, GameState};
+use crate::{constants::*, player::*, collisions::{CollisionComponent, Collisionable}, GameState, GameConfig};
 
 
 pub struct SetupPlugin;
@@ -102,12 +102,13 @@ pub fn setup_random_trees(
     asset_server: Res<AssetServer>, 
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     collisionable_query: Query<&CollisionComponent>,
+    game_config: Res<GameConfig>,
 ) {
     let tree_texture_handle = asset_server.load("trees.png");
     let tree_texture_atlas = TextureAtlas::from_grid(tree_texture_handle, Vec2::new(TREE_WIDTH, TREE_HEIGHT), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(3., 0.)));
     let tree_texture_atlas_handle = texture_atlases.add(tree_texture_atlas);
 
-    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_TREE);
+    let mut rng = StdRng::seed_from_u64(game_config.seed + OFFSET_TREE);
 
     for _ in 0..TREE_NUMBER {
         let mut x;
@@ -142,12 +143,13 @@ pub fn setup_random_bushes(
     mut commands: Commands, 
     asset_server: Res<AssetServer>, 
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    game_config: Res<GameConfig>,
 ) {
     let bush_texture_handle = asset_server.load("bushes.png");
     let bush_texture_atlas = TextureAtlas::from_grid(bush_texture_handle, Vec2::new(BUSH_WIDTH, BUSH_HEIGHT), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
     let bush_texture_atlas_handle = texture_atlases.add(bush_texture_atlas);
 
-    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_BUSH );
+    let mut rng = StdRng::seed_from_u64(game_config.seed + OFFSET_BUSH );
     for _ in 0..BUSH_NUMBER {
         let x = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
         let y = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
@@ -170,12 +172,13 @@ pub fn setup_random_graves(
     asset_server: Res<AssetServer>, 
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     collisionable_query: Query<&CollisionComponent>,
+    game_config: Res<GameConfig>,
 ) {
     let big_grave_texture_handle = asset_server.load("graves.png");
     let big_grave_texture_atlas = TextureAtlas::from_grid(big_grave_texture_handle, Vec2::new(64., 64.), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
     let big_grave_texture_atlas_handle = texture_atlases.add(big_grave_texture_atlas);
 
-    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_GRAVE);
+    let mut rng = StdRng::seed_from_u64(game_config.seed + OFFSET_GRAVE);
     for _ in 0..GRAVES_NUMBER {
         let mut x = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);
         let mut y = rng.gen_range(-MAP_SIZE / 2. + 32.0..MAP_SIZE / 2. - 32.);

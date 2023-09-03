@@ -1,5 +1,5 @@
 use bevy::app::AppExit;
-use bevy::{prelude::*, window::WindowMode};
+use bevy::prelude::*;
 use crate::constants::*;
 use crate::GameState;
 
@@ -14,7 +14,6 @@ impl Plugin for MenuPlugin {
 
 #[derive(Component)]
 pub struct Menu;
-
 #[derive(Component)]
 pub struct ButtonPlay;
 #[derive(Component)]
@@ -119,7 +118,7 @@ fn intteract_with_quit_button(
     }
 }
 
-fn despawn_menu(mut commands: &mut Commands, menu_query: &Query<Entity, With<Menu>>) {
+fn despawn_menu(commands: &mut Commands, menu_query: &Query<Entity, With<Menu>>) {
     for entity in menu_query.iter() {
         commands.entity(entity).despawn_recursive();
     }

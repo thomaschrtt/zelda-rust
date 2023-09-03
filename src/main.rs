@@ -30,9 +30,23 @@ pub enum GameState {
     GameOver,
 }
 
+#[derive(Resource)]
+pub struct GameConfig {
+    pub seed: u64,
+}
+
+impl Default for GameConfig {
+    fn default() -> Self {
+        GameConfig {
+            seed: DEFAULT_SEED,
+        }
+    }
+}
+    
 
 fn main() {
     App::new()
+        .insert_resource(GameConfig::default())
         .add_state::<GameState>()
         .add_plugins((DefaultPlugins, menu::MenuPlugin, PlayerPlugin, SetupPlugin, EnnemyPlugin, StructuresPlugin, GUIPlugin, PausePlugin, GameOverPlugin))
         .add_systems(Startup, setup_window)
@@ -42,7 +56,7 @@ fn main() {
 fn setup_window(
     mut commands: Commands,
     mut windows: Query<&mut Window>,
-    
+
 ) {
     let mut window = windows.single_mut();
     window.mode = WindowMode::BorderlessFullscreen;

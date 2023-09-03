@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use rand::prelude::*;
+use crate::GameConfig;
 use crate::GameState;
 use crate::constants::*;
 use crate::collisions::*;
@@ -108,7 +109,8 @@ fn setup_sanctuary(
     commands: &mut Commands, 
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    collision_query: &Query<&CollisionComponent>
+    collision_query: &Query<&CollisionComponent>,
+    game_config: Res<GameConfig>,
 ) {
     // Load the sanctuary texture
     let texture_handle = asset_server.load("sanctuary.png");
@@ -119,7 +121,7 @@ fn setup_sanctuary(
 
     for _ in 0..SANCTUARY_NB {
         if let Some(mut sanctuary) = (0..10)
-            .map(|_| Sanctuary::new_random_position(SEED + OFFSET_SANCTUARY + added_sanctuaries.len() as u64))
+            .map(|_| Sanctuary::new_random_position(game_config.seed + OFFSET_SANCTUARY + added_sanctuaries.len() as u64))
             .find(|sanct| !does_collide_with_existing(sanct, &collision_query, &added_sanctuaries)) {
 
             let collision_component = CollisionComponent::new_from_component(&sanctuary);
@@ -147,15 +149,16 @@ pub fn setup_structures(
     asset_server: Res<AssetServer>,
     collision_query: Query<&CollisionComponent>,
     texture_atlases: ResMut<Assets<TextureAtlas>>,
+    game_config: Res<GameConfig>,
 ) {
     let tower_texture_handle = asset_server.load("tower.png");
 
-    let mut rng = StdRng::seed_from_u64(SEED + OFFSET_TOWER);
+    let mut rng = StdRng::seed_from_u64(game_config.seed + OFFSET_TOWER);
     let x = rng.gen_range(-MAP_SIZE / 2. + TOWER_WIDTH..MAP_SIZE / 2. - TOWER_WIDTH);
     let y = rng.gen_range(-MAP_SIZE / 2. + TOWER_HEIGHT + PLAYER_HITBOX_HEIGHT..MAP_SIZE / 2. - TOWER_HEIGHT);
 
     let tower = Tower::new(x, y);
-    setup_sanctuary(&mut commands, asset_server, texture_atlases, &collision_query);
+    setup_sanctuary(&mut commands, asset_server, texture_atlases, &collision_query, game_config);
 
     // Setup tower
     let collisioncomponent = CollisionComponent::new_from_component(&tower);
@@ -204,10 +207,10 @@ fn update_collision_component(mut query: Query<(&mut CollisionComponent, &Sanctu
     }
 }
 
-pub fn show_one_sanctuary(mut query: Query<&mut Sanctuary>) {
+pub fn show_one_sanctuary(mut query: Query<&mut Sanctuary>, game_config: Res<GameConfig>) {
     if are_all_visible_sanctuaries_unlocked(&query) {
 
-        let mut rng = StdRng::seed_from_u64(SEED);
+        let mut rng = StdRng::seed_from_u64(game_config.seed);
         let mut sanctuaries: Vec<_> = query.iter_mut().filter(|sanctuary| !sanctuary.visibility).collect();
         let len = sanctuaries.len();
 

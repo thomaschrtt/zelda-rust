@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use bevy::prelude::*;
+use crate::GameConfig;
 use crate::collisions;
 use crate::constants::*;
 use crate::collisions::*;
@@ -650,12 +651,13 @@ fn tower_detection(
     tower_query: Query<&Tower>,
     keyboard_input: Res<Input<KeyCode>>,
     query_sanctuary: Query<&mut Sanctuary>,
+    game_config: Res<GameConfig>,
 ) {
     let player = player_query.single_mut();
     for tower in tower_query.iter() {
         if can_interact_with(&player, &InteractionType::Tower, player.x(), player.y() + 1., Some(tower), None, None) {
             if keyboard_input.just_pressed(KeyCode::Space) {
-                structures::show_one_sanctuary(query_sanctuary);
+                structures::show_one_sanctuary(query_sanctuary, game_config);
                 break;
             }
         }

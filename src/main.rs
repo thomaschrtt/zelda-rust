@@ -36,6 +36,12 @@ pub struct GameConfig {
     pub seed: u64,
 }
 
+impl GameConfig {
+    pub fn new(seed: u64) -> Self {
+        GameConfig { seed }
+    }
+}
+
 impl Default for GameConfig {
     fn default() -> Self {
         GameConfig {
@@ -46,8 +52,13 @@ impl Default for GameConfig {
     
 
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
     App::new()
-        .insert_resource(GameConfig::default())
+        .insert_resource(if args.len() > 1 {
+            GameConfig::new(args[1].parse().unwrap_or(DEFAULT_SEED))
+        } else {
+            GameConfig::default()
+        })
         .add_state::<GameState>()
         .add_plugins((DefaultPlugins, menu::MenuPlugin, PlayerPlugin, SetupPlugin, EnnemyPlugin, StructuresPlugin, GUIPlugin, PausePlugin, GameOverPlugin, buttons::ButtonPlugin))
         .add_systems(Startup, setup_window)

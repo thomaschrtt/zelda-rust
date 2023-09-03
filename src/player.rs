@@ -144,18 +144,6 @@ impl Player {
         true
     }
 
-    fn is_idle(&self) -> bool {
-        self.state == PlayerState::Idle
-    }
-
-    fn is_moving(&self) -> bool {
-        self.state == PlayerState::Moving
-    }
-
-    fn is_sprinting(&self) -> bool {
-        self.state == PlayerState::Sprinting
-    }
-
     fn is_attacking(&self) -> bool {
         self.state == PlayerState::Attacking
     }
@@ -652,12 +640,13 @@ fn tower_detection(
     keyboard_input: Res<Input<KeyCode>>,
     query_sanctuary: Query<&mut Sanctuary>,
     game_config: Res<GameConfig>,
+    nextstate : ResMut<NextState<GameState>>
 ) {
     let player = player_query.single_mut();
     for tower in tower_query.iter() {
         if can_interact_with(&player, &InteractionType::Tower, player.x(), player.y() + 1., Some(tower), None, None) {
             if keyboard_input.just_pressed(KeyCode::Space) {
-                structures::show_one_sanctuary(query_sanctuary, game_config);
+                structures::show_one_sanctuary(query_sanctuary, game_config, nextstate);
                 break;
             }
         }

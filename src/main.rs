@@ -9,6 +9,7 @@ mod entitypattern;
 mod menu;
 mod pause;
 mod gameover;
+mod buttons;
 
 use bevy::prelude::*;
 use bevy::window::WindowMode;
@@ -48,7 +49,7 @@ fn main() {
     App::new()
         .insert_resource(GameConfig::default())
         .add_state::<GameState>()
-        .add_plugins((DefaultPlugins, menu::MenuPlugin, PlayerPlugin, SetupPlugin, EnnemyPlugin, StructuresPlugin, GUIPlugin, PausePlugin, GameOverPlugin))
+        .add_plugins((DefaultPlugins, menu::MenuPlugin, PlayerPlugin, SetupPlugin, EnnemyPlugin, StructuresPlugin, GUIPlugin, PausePlugin, GameOverPlugin, buttons::ButtonPlugin))
         .add_systems(Startup, setup_window)
         .run();
 }

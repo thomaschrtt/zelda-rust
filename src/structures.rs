@@ -207,7 +207,7 @@ fn update_collision_component(mut query: Query<(&mut CollisionComponent, &Sanctu
     }
 }
 
-pub fn show_one_sanctuary(mut query: Query<&mut Sanctuary>, game_config: Res<GameConfig>) {
+pub fn show_one_sanctuary(mut query: Query<&mut Sanctuary>, game_config: Res<GameConfig>, mut nextstate: ResMut<NextState<GameState>>) {
     if are_all_visible_sanctuaries_unlocked(&query) {
 
         let mut rng = StdRng::seed_from_u64(game_config.seed);
@@ -219,6 +219,7 @@ pub fn show_one_sanctuary(mut query: Query<&mut Sanctuary>, game_config: Res<Gam
             sanctuary.visibility = true;
         } else {
             println!("Pas de sanctuaire trouvé");
+            nextstate.set(GameState::GameOver);
         }
     }
     else {

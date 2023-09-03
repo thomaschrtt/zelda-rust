@@ -1,4 +1,4 @@
-pub const DEFAULT_SEED: u64 = 100;
+pub const DEFAULT_SEED: u64 = 74523;
 
 // WINDOW
 pub const WINDOW_WIDTH: f32 = 1920.;
@@ -13,6 +13,9 @@ pub const Z_LAYER_PLAYER: f32 = 1.;
 pub const Z_LAYER_GUI: f32 = f32::MAX;
 pub const Z_LAYER_STRUCTURES: f32 = 2.;
 pub const Z_LAYER_ENNEMIES: f32 = Z_LAYER_PLAYER;
+
+pub const BUTTON_WIDTH: f32 = 200.;
+pub const BUTTON_HEIGHT: f32 = 100.;
 
 // PLAYER
 pub const PLAYER_SPRITE_SIZE: f32 = 32.;

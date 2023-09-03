@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::WindowMode};
+use bevy::prelude::*;
 use rand::prelude::*;
 use crate::{constants::*, player::*, collisions::{CollisionComponent, Collisionable}, GameState, GameConfig};
 
@@ -226,23 +226,23 @@ pub fn setup_random_graves(
     }
 }
 
-pub fn show_collisionable_component(
-    mut collisions_compo: Query<&CollisionComponent>
-    , mut commands: Commands
-) {
-    for element in collisions_compo.iter_mut() {
-        let (x,y, w, h) = element.get_hitbox();
-        commands.spawn(SpriteBundle {
-            transform: Transform {
-                translation: Vec3::new(x, y, Z_LAYER_GUI),
-                ..Transform::default()
-            },
-            sprite: Sprite {
-                color: Color::rgb(1., 0., 0.),
-                custom_size: Some(Vec2::new(w, h)),
-                ..Default::default()
-            },
-            ..Default::default()
-        });
-    }
-}
+// pub fn show_collisionable_component(
+//     mut collisions_compo: Query<&CollisionComponent>
+//     , mut commands: Commands
+// ) {
+//     for element in collisions_compo.iter_mut() {
+//         let (x,y, w, h) = element.get_hitbox();
+//         commands.spawn(SpriteBundle {
+//             transform: Transform {
+//                 translation: Vec3::new(x, y, Z_LAYER_GUI),
+//                 ..Transform::default()
+//             },
+//             sprite: Sprite {
+//                 color: Color::rgb(1., 0., 0.),
+//                 custom_size: Some(Vec2::new(w, h)),
+//                 ..Default::default()
+//             },
+//             ..Default::default()
+//         });
+//     }
+// }

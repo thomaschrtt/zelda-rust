@@ -1,5 +1,6 @@
 use bevy::app::AppExit;
 use bevy::prelude::*;
+use crate::buttons::*;
 use crate::constants::*;
 use crate::GameState;
 
@@ -47,51 +48,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         }, Menu))
         .with_children(|parent| {
-            create_button(parent, "Play", ButtonPlay)
+            create_button(parent, "Play", ButtonPlay, &asset_server)
         })
         .with_children(|parent| {
-            create_button(parent, "Quit", ButtonQuit)
+            create_button(parent, "Quit", ButtonQuit, &asset_server)
         });
 }
-
-fn create_button<T: Component>(
-    commands: &mut ChildBuilder,
-    button_text: &str,
-    button_component: T,
-) {
-    commands
-        .spawn(ButtonBundle {
-            style: Style {
-                width: Val::Px(200.0),
-                height: Val::Px(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..Default::default()
-            },
-            background_color: Color::rgb(0.1, 0.1, 0.9).into(),
-            ..Default::default()
-        })
-        .insert(button_component)
-        .with_children(|parent| {
-            parent.spawn(TextBundle {
-                text: Text {
-                    sections: vec![
-                        TextSection {
-                            value: button_text.to_string(),
-                            style: TextStyle {
-                                font_size: 50.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
-                                ..Default::default()
-                            },
-                        },
-                    ],
-                    ..Default::default()
-                },
-                ..Default::default()
-            });
-        });
-}
-
 
 fn intteract_with_play_button(
     mut state: ResMut<NextState<GameState>>,

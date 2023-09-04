@@ -13,6 +13,12 @@ impl Plugin for ButtonPlugin {
 #[derive(Component)]
 pub struct ButtonCompo;
 
+#[derive(Component)]
+pub struct ButtonOriginalSize {
+    pub width: f32,
+    pub height: f32,
+}
+
 pub fn create_button<T: Component>(
     commands: &mut ChildBuilder,
     button_text: &str,
@@ -24,8 +30,10 @@ pub fn create_button<T: Component>(
     commands
         .spawn((ButtonBundle {
             style: Style {
-                width: Val::Px(200.0),
-                height: Val::Px(100.0),
+                width: Val::Auto,
+                max_width: Val::Px(400.),
+                min_height: Val::Px(100.0),
+                padding: UiRect::all(Val::Px(20.0)),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
                 ..Default::default()
@@ -47,6 +55,7 @@ pub fn create_button<T: Component>(
                             },
                         },
                     ],
+                    alignment: TextAlignment::Center,
                     ..Default::default()
                 },
                 ..Default::default()
@@ -64,18 +73,14 @@ fn button_animation(
 
         match *interaction {
             Interaction::Pressed => {
-                style.width = Val::Px(BUTTON_WIDTH * 0.9);
-                style.height = Val::Px(BUTTON_HEIGHT * 0.9);
                 *image = UiImage::new(pressed.clone());
             }
             Interaction::Hovered => {
-                style.width = Val::Px(BUTTON_WIDTH * 1.1);
-                style.height = Val::Px(BUTTON_HEIGHT * 1.1);
+                style.padding = UiRect::axes(Val::Px(10.0), Val::Px(20.0));
             }
             Interaction::None => {
-                style.width = Val::Px(BUTTON_WIDTH);
-                style.height = Val::Px(BUTTON_HEIGHT);
                 *image = UiImage::new(not_pressed.clone());
+                style.padding = UiRect::all(Val::Px(20.0));
             }
         }
     }

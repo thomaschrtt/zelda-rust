@@ -1,5 +1,7 @@
 use bevy::app::AppExit;
 use bevy::prelude::*;
+use rand::Rng;
+use crate::GameConfig;
 use crate::buttons::*;
 use crate::constants::*;
 use crate::GameState;
@@ -9,7 +11,7 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup)
-            .add_systems(Update, (intteract_with_play_button, intteract_with_quit_button, start_on_press_space).run_if(in_state(GameState::Menu)));
+            .add_systems(Update, (intteract_with_play_button, intteract_with_quit_button, start_on_press_space, start_random_seed).run_if(in_state(GameState::Menu)));
     }
 }
 
@@ -47,6 +49,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             ..default()
         }, Menu))
+        .with_children(|parent| {
+            create_button(parent, "Start Random Seed", RandomSeedButton, &asset_server)
+        })
         .with_children(|parent| {
             create_button(parent, "Play", ButtonPlay, &asset_server)
         })
@@ -98,3 +103,24 @@ fn start_on_press_space(
     }
 }
 
+
+#[derive(Component)]
+pub struct RandomSeedButton;
+
+
+fn start_random_seed(
+    mut state: ResMut<NextState<GameState>>,
+    mut game_config: ResMut<GameConfig>,
+    mut button_query: Query<(&Interaction, &RandomSeedButton)>,
+    mut commands: Commands,
+    menu_query: Query<Entity, With<Menu>>
+) {
+    for (interaction, _) in button_query.iter_mut() {
+        if *interaction == Interaction::Pressed {
+            let mut rand = rand::thread_rng();
+            game_config.seed = rand.gen_range(0..1000000);
+            state.set(GameState::Playing);
+            despawn_menu(&mut commands, &menu_query)
+        }
+    }
+}

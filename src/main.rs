@@ -10,11 +10,13 @@ mod menu;
 mod pause;
 mod gameover;
 mod buttons;
+mod loading;
 
 use bevy::prelude::*;
 use bevy::window::WindowMode;
 use ennemies::EnnemyPlugin;
 use gameover::GameOverPlugin;
+use loading::RestartButtonPlugin;
 use pause::PausePlugin;
 use setup::SetupPlugin;
 use crate::player::*;
@@ -79,7 +81,8 @@ fn main() {
             GUIPlugin, 
             PausePlugin, 
             GameOverPlugin, 
-            buttons::ButtonPlugin))
+            buttons::ButtonPlugin,
+            RestartButtonPlugin))
         .add_systems(Startup, setup_window)
         .run();
 }

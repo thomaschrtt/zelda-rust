@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::texture};
+use bevy::prelude::*;
 use crate::{constants::*, structures::Sanctuary, collisions::{*, self}, GameState};
 
 pub struct GUIPlugin;

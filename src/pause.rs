@@ -1,6 +1,6 @@
 use bevy::{prelude::*, app::AppExit};
 
-use crate::{GameState, buttons::create_button};
+use crate::{GameState, buttons::create_button, loading::create_restart_button};
 
 pub struct PausePlugin;
 
@@ -63,6 +63,9 @@ fn pause_menu(
         }, Pause))
         .with_children(|parent| {
             create_button(parent, "Resume", ResumeButton, &asset_server)
+        })
+        .with_children(|parent| {
+            create_restart_button(parent, &asset_server)
         })
         .with_children(|parent| {
             create_button(parent, "Quit", QuitButton, &asset_server)

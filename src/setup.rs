@@ -24,7 +24,7 @@ pub fn setup(
     asset_server: Res<AssetServer>,
 ) {
     commands.spawn(SpriteBundle {
-        texture: asset_server.load("background.png"),
+        texture: asset_server.load("Background/background.png"),
         transform: Transform {
             translation: Vec3::new(0., 0., Z_LAYER_BACKGROUND),
             ..Transform::default()
@@ -105,7 +105,7 @@ pub fn setup_random_trees(
     collisionable_query: Query<&CollisionComponent>,
     game_config: Res<GameConfig>,
 ) {
-    let tree_texture_handle = asset_server.load("trees.png");
+    let tree_texture_handle = asset_server.load("Background/trees.png");
     let tree_texture_atlas = TextureAtlas::from_grid(tree_texture_handle, Vec2::new(TREE_WIDTH, TREE_HEIGHT), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(3., 0.)));
     let tree_texture_atlas_handle = texture_atlases.add(tree_texture_atlas);
 
@@ -146,7 +146,7 @@ pub fn setup_random_bushes(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     game_config: Res<GameConfig>,
 ) {
-    let bush_texture_handle = asset_server.load("bushes.png");
+    let bush_texture_handle = asset_server.load("Background/bushes.png");
     let bush_texture_atlas = TextureAtlas::from_grid(bush_texture_handle, Vec2::new(BUSH_WIDTH, BUSH_HEIGHT), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
     let bush_texture_atlas_handle = texture_atlases.add(bush_texture_atlas);
 
@@ -175,7 +175,7 @@ pub fn setup_random_graves(
     collisionable_query: Query<&CollisionComponent>,
     game_config: Res<GameConfig>,
 ) {
-    let big_grave_texture_handle = asset_server.load("graves.png");
+    let big_grave_texture_handle = asset_server.load("Background/graves.png");
     let big_grave_texture_atlas = TextureAtlas::from_grid(big_grave_texture_handle, Vec2::new(64., 64.), 3, 1, Some(Vec2::new(0., 0.)), Some(Vec2::new(0., 0.)));
     let big_grave_texture_atlas_handle = texture_atlases.add(big_grave_texture_atlas);
 

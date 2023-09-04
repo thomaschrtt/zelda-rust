@@ -43,7 +43,7 @@ fn setup_gui(mut commands: Commands,
             translation: Vec3::new(0., 0., Z_LAYER_GUI),
             ..Transform::default()
         },
-        texture: asset_server.load("s.png"),
+        texture: asset_server.load("UI/s.png"),
         ..Default::default()
     }, gui));
 }

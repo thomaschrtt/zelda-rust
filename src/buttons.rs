@@ -19,7 +19,7 @@ pub fn create_button<T: Component>(
     button_component: T,
     asset_server: &Res<AssetServer>, 
 ) {
-    let texture: Handle<Image> = asset_server.load("button.png");
+    let texture: Handle<Image> = asset_server.load("UI/button.png");
     
     commands
         .spawn((ButtonBundle {

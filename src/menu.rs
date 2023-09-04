@@ -22,7 +22,7 @@ pub struct ButtonQuit;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(SpriteBundle {
-        texture: asset_server.load("background.png"),
+        texture: asset_server.load("Background/background.png"),
         transform: Transform {
             translation: Vec3::new(0., 0., Z_LAYER_BACKGROUND),
             ..Transform::default()

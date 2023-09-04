@@ -6,7 +6,7 @@ pub struct ButtonPlugin;
 
 impl Plugin for ButtonPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, hover_animation);
+        app.add_systems(Update, button_animation);
     }
 }
 
@@ -54,14 +54,19 @@ pub fn create_button<T: Component>(
         });
 }
 
-fn hover_animation(
-    mut button_query: Query<(&Interaction, &mut Style), With<ButtonCompo>>,
+fn button_animation(
+    mut button_query: Query<(&Interaction, &mut Style, &mut UiImage), With<ButtonCompo>>,
+    asset_server: Res<AssetServer>,
 ) {
-    for (interaction, mut style) in button_query.iter_mut() {
+    let not_pressed: Handle<Image> = asset_server.load("UI/button.png");
+    let pressed: Handle<Image> = asset_server.load("UI/pressed_button.png");
+    for (interaction, mut style, mut image) in button_query.iter_mut() {
+
         match *interaction {
             Interaction::Pressed => {
                 style.width = Val::Px(BUTTON_WIDTH * 0.9);
                 style.height = Val::Px(BUTTON_HEIGHT * 0.9);
+                *image = UiImage::new(pressed.clone());
             }
             Interaction::Hovered => {
                 style.width = Val::Px(BUTTON_WIDTH * 1.1);
@@ -70,6 +75,7 @@ fn hover_animation(
             Interaction::None => {
                 style.width = Val::Px(BUTTON_WIDTH);
                 style.height = Val::Px(BUTTON_HEIGHT);
+                *image = UiImage::new(not_pressed.clone());
             }
         }
     }

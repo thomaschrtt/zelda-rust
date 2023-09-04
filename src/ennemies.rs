@@ -30,6 +30,7 @@ pub struct EnnemyPlugin;
 impl Plugin for EnnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnExit(GameState::Menu), summon_ennemies)
+        .add_systems(OnExit(GameState::Loading), summon_ennemies)
             .add_systems(Update, (game_ready.run_if(run_once()),
                                                     update_ennemy_position, 
                                                     update_ennemy_hitbox,

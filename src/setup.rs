@@ -11,6 +11,10 @@ impl Plugin for SetupPlugin {
                                                     setup_random_trees, 
                                                     setup_random_bushes, 
                                                     setup_random_graves, ))
+            .add_systems(OnExit(GameState::Loading), (setup, 
+                                                        setup_random_trees, 
+                                                        setup_random_bushes, 
+                                                        setup_random_graves, ))
             .add_systems(Update, (
                 // zoom_camera, 
                                                    track_player,
@@ -18,6 +22,8 @@ impl Plugin for SetupPlugin {
     }
 }
 
+#[derive(Component)]
+pub struct Background;
 
 pub fn setup(
     mut commands: Commands, 
@@ -30,7 +36,7 @@ pub fn setup(
             ..Transform::default()
         },
         ..Default::default()
-    });
+    }).insert(Background);
 
 }
 

@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::texture};
 use crate::{constants::*, structures::Sanctuary, collisions::{*, self}, GameState};
 
 pub struct GUIPlugin;
@@ -6,13 +6,14 @@ pub struct GUIPlugin;
 impl Plugin for GUIPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnExit(GameState::Menu), setup_gui)
-            .add_systems(Update, (update_visibility, 
-                                                    update_gui_pos,
-                                                    update_display_pos).distributive_run_if(in_state(GameState::Playing)));
+            .add_systems(OnExit(GameState::Loading), setup_gui)
+              .add_systems(Update, (update_visibility, 
+                                                      update_gui_pos,
+                                                      update_display_pos).distributive_run_if(in_state(GameState::Playing)));
     }
 }
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Debug)]
 pub struct GUI {
     x: f32,
     y: f32,
@@ -22,7 +23,7 @@ pub struct GUI {
 
 impl GUI {
     pub fn new(x: f32, y: f32, color: Color) -> Self {
-        GUI { x, y, color, visible: false }
+        GUI { x, y, color, visible: true }
     }
 
     fn set_visible(&mut self, visible: bool) {
@@ -48,12 +49,12 @@ fn setup_gui(mut commands: Commands,
     }, gui));
 }
 
+
 fn update_gui_pos(mut query: Query<&mut GUI>,  
                   visible_sanctuary_query: Query<&Sanctuary>, 
                   camera_pos: Query<&Transform, With<Camera>>) 
 {
     let mut gui = query.single_mut();
-
     let camera_pos = camera_pos.single();
     let camera_pos = (camera_pos.translation.x, camera_pos.translation.y);
 
@@ -120,7 +121,7 @@ fn get_gui_pos(sanct_post_x: f32, sanct_post_y: f32, cam_x: f32, cam_y: f32) -> 
 }
 
 fn update_visibility(mut query: Query<(&mut Visibility, &GUI)>) {
-    for (mut sprite_visibility, gui) in query.iter_mut() {
+    for (mut sprite_visibility, gui) in query.iter_mut() {  
         *sprite_visibility = if gui.visible { Visibility::Visible } else { Visibility::Hidden };
     }
 }

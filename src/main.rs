@@ -29,6 +29,12 @@ pub enum GameState {
     Playing,
     Paused,
     GameOver,
+    Loading,
+}
+
+#[derive(Resource, Default)]
+struct LoadingState {
+    timer: Timer,
 }
 
 #[derive(Resource)]
@@ -59,8 +65,21 @@ fn main() {
         } else {
             GameConfig::default()
         })
+        .insert_resource(LoadingState {
+            timer: Timer::from_seconds(1.0, TimerMode::Once), // 1 seconde
+        })
         .add_state::<GameState>()
-        .add_plugins((DefaultPlugins, menu::MenuPlugin, PlayerPlugin, SetupPlugin, EnnemyPlugin, StructuresPlugin, GUIPlugin, PausePlugin, GameOverPlugin, buttons::ButtonPlugin))
+        .add_plugins((
+            DefaultPlugins, 
+            menu::MenuPlugin, 
+            PlayerPlugin, 
+            SetupPlugin, 
+            EnnemyPlugin, 
+            StructuresPlugin, 
+            GUIPlugin, 
+            PausePlugin, 
+            GameOverPlugin, 
+            buttons::ButtonPlugin))
         .add_systems(Startup, setup_window)
         .run();
 }

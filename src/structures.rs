@@ -10,6 +10,7 @@ pub struct StructuresPlugin;
 impl Plugin for StructuresPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnExit(GameState::Menu), setup_structures)
+            .add_systems(OnExit(GameState::Loading), setup_structures)
             .add_systems(Update, (update_structures_pos,  
                                                     update_visibility, 
                                                     // change_visibility_with_keybinding, 

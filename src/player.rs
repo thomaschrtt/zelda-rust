@@ -18,6 +18,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnExit(GameState::Menu), spawn_player)
+        .add_systems(OnExit(GameState::Loading), spawn_player)
             .add_systems(Update, (player_move, 
                                                     update_player_pos, 
                                                     player_facing_direction, 
@@ -792,4 +793,3 @@ fn slide_out_of_collision(
     player.set_x(orig_x + best_move.0);
     player.set_y(orig_y + best_move.1);
 }
-

@@ -26,11 +26,11 @@ impl Plugin for PlayerPlugin {
                                                     sanctuary_detection,
                                                     background_elements_transparency,
                                                     update_hitbox_pos,
-                                                    update_hitbox_visibility,
+                                                    // update_hitbox_visibility,
                                                     ennemy_detection,
                                                     update_collision,
                                                     update_player_state,
-                                                    slide_if_inside_anything,
+                                                    slide_out_of_collision,
                                                     switch_to_game_over
                                                 ).run_if(in_state(GameState::Playing)));
     }
@@ -167,8 +167,6 @@ impl Player {
     fn is_dying(&self) -> bool {
         self.state == PlayerState::Dying
     }
-
-
 
     fn heal(&mut self) {
         self.self_entity.add_health(SANCTUARY_HEALING);
@@ -575,19 +573,19 @@ fn update_hitbox_pos(
     }
 }
 
-fn update_hitbox_visibility(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut hitbox_query: Query<&mut Visibility, With<HitBox>>,
-) {
-    for mut visibility in hitbox_query.iter_mut() {
-        if keyboard_input.just_pressed(KeyCode::L) {
-            *visibility = Visibility::Visible;
-        }
-        if keyboard_input.just_pressed(KeyCode::K) {
-            *visibility = Visibility::Hidden;
-        }
-    }
-}
+// fn update_hitbox_visibility(
+//     keyboard_input: Res<Input<KeyCode>>,
+//     mut hitbox_query: Query<&mut Visibility, With<HitBox>>,
+// ) {
+//     for mut visibility in hitbox_query.iter_mut() {
+//         if keyboard_input.just_pressed(KeyCode::L) {
+//             *visibility = Visibility::Visible;
+//         }
+//         if keyboard_input.just_pressed(KeyCode::K) {
+//             *visibility = Visibility::Hidden;
+//         }
+//     }
+// }
 
 fn update_collision(
     mut query: Query<(&mut CollisionComponent, &Player)>,
@@ -732,16 +730,66 @@ pub fn background_elements_transparency(
     }
 }
 
-
-fn slide_if_inside_anything(
+fn slide_out_of_collision(
     mut player_query: Query<&mut Player>,
     mut collisionable_query: Query<&mut CollisionComponent, Without<Player>>,
 ) {
     let mut player = player_query.single_mut();
-    let (x,y) = player.get_pos();
+    let (orig_x, orig_y) = player.get_pos();
+    
+    // Vérifier si le joueur est actuellement en collision avec quelque chose
+    let mut currently_colliding = false;
     for collidable in collisionable_query.iter_mut() {
-        if player.would_collide(x, y, &collidable) {
-            player.set_x(x + 1.);
+        if player.would_collide(orig_x, orig_y, &collidable) {
+            currently_colliding = true;
+            break;
         }
     }
+    
+    // Si le joueur n'est pas en collision, quitter la fonction
+    if !currently_colliding {
+        return;
+    }
+
+    // Définir les déplacements possibles
+    let possible_moves = [
+        (1., 0.),
+        (0., 1.),
+        (-1., 0.),
+        (0., -1.),
+        (1., 1.),
+        (-1., -1.),
+        (1., -1.),
+        (-1., 1.)
+    ];
+    
+    let mut best_move = (0., 0.);
+    let mut min_collisions = usize::MAX;
+
+    for (dx, dy) in possible_moves.iter() {
+        let new_x = orig_x + dx;
+        let new_y = orig_y + dy;
+        let mut collision_count = 0;
+
+        for collidable in collisionable_query.iter_mut() {
+            if player.would_collide(new_x, new_y, &collidable) {
+                collision_count += 1;
+            }
+        }
+
+        if collision_count == 0 {
+            best_move = (*dx, *dy);
+            break;
+        }
+
+        if collision_count < min_collisions {
+            best_move = (*dx, *dy);
+            min_collisions = collision_count;
+        }
+    }
+
+    // Déplacer le joueur vers la meilleure position trouvée
+    player.set_x(orig_x + best_move.0);
+    player.set_y(orig_y + best_move.1);
 }
+

@@ -9,7 +9,7 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup)
-            .add_systems(Update, (intteract_with_play_button, intteract_with_quit_button).run_if(in_state(GameState::Menu)));
+            .add_systems(Update, (intteract_with_play_button, intteract_with_quit_button, start_on_press_space).run_if(in_state(GameState::Menu)));
     }
 }
 
@@ -83,6 +83,18 @@ fn intteract_with_quit_button(
 fn despawn_menu(commands: &mut Commands, menu_query: &Query<Entity, With<Menu>>) {
     for entity in menu_query.iter() {
         commands.entity(entity).despawn_recursive();
+    }
+}
+
+fn start_on_press_space(
+    mut state: ResMut<NextState<GameState>>,
+    keyboard_input: Res<Input<KeyCode>>,
+    mut commands: Commands,
+    menu_query: Query<Entity, With<Menu>>
+) {
+    if keyboard_input.just_pressed(KeyCode::Space) {
+        state.set(GameState::Playing);
+        despawn_menu(&mut commands, &menu_query)
     }
 }
 

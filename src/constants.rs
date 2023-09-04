@@ -5,8 +5,8 @@ pub const WINDOW_WIDTH: f32 = 1920.;
 pub const WINDOW_HEIGHT: f32 = 1080.;
 pub const MAP_SIZE: f32 = 1400.;
 pub const CAMERA_DEFAULT_SCALE: f32 = 0.2;
-pub const CAMERA_MIN_SCALE: f32 = 0.1;
-pub const CAMERA_MAX_SCALE: f32 = 1.;
+// pub const CAMERA_MIN_SCALE: f32 = 0.1;
+// pub const CAMERA_MAX_SCALE: f32 = 1.;
 
 pub const Z_LAYER_BACKGROUND: f32 = 0.;
 pub const Z_LAYER_PLAYER: f32 = 1.;
@@ -38,16 +38,17 @@ pub const SANCTUARY_NB: i32 = 3;
 pub const SANCTUARY_HEALING: i32 = 5;
 
 // ENNEMIES
-pub const ENNEMIES_NUMBER: i32 = 45;
+pub const ENNEMIES_NUMBER: i32 = 40;
 pub const ENNEMY_SPRITE_SIZE: f32 = 32.;
 pub const ENNEMY_SPRITE_SCALE: f32 = 0.5;
 pub const ENNEMY_HITBOX_WIDTH: f32 = ENNEMY_SPRITE_SIZE * ENNEMY_SPRITE_SCALE;
 pub const ENNEMY_HITBOX_HEIGHT: f32 = ENNEMY_SPRITE_SIZE * ENNEMY_SPRITE_SCALE;
-pub const ENNEMY_SPRINT_SPEED: f32 = 1.2;
+pub const ENNEMY_SPRINT_SPEED: f32 = 1.3;
 pub const ENNEMY_NORMAL_SPEED: f32 = 0.6;
 pub const ENNEMY_ATTACK_SPEED: f32 = 0.4;
 pub const ENNEMY_ATTACK_RANGE: f32 = 5.;
 pub const ENNEMY_AGGRO_DISTANCE: f32 = 120.;
+pub const ENNEMY_DEFENCE_RATIO: f32 = 0.2;
 
 // OTHERS
 pub const TREE_HEIGHT: f32 = 160.;

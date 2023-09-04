@@ -11,7 +11,8 @@ impl Plugin for SetupPlugin {
                                                     setup_random_trees, 
                                                     setup_random_bushes, 
                                                     setup_random_graves, ))
-            .add_systems(Update, (zoom_camera, 
+            .add_systems(Update, (
+                // zoom_camera, 
                                                    track_player,
                                                    ).run_if(in_state(GameState::Playing)));
     }
@@ -33,25 +34,25 @@ pub fn setup(
 
 }
 
-pub fn zoom_camera(
-    mut query: Query<&mut OrthographicProjection>,
-    keyboard_input: Res<Input<KeyCode>>,
-) {
-    let mut transform = query.single_mut();
-    if keyboard_input.pressed(KeyCode::S) && transform.scale < CAMERA_MAX_SCALE {
-        transform.scale = transform.scale + 0.01;
-    }
-    if keyboard_input.pressed(KeyCode::Z) && transform.scale > CAMERA_MIN_SCALE{
-        transform.scale = transform.scale - 0.01;
-    }
-    if keyboard_input.pressed(KeyCode::R) {
-        transform.scale = CAMERA_DEFAULT_SCALE;
-    }
-    if keyboard_input.pressed(KeyCode::M) {
-        transform.scale = CAMERA_MAX_SCALE;
-    }
+// pub fn zoom_camera(
+//     mut query: Query<&mut OrthographicProjection>,
+//     keyboard_input: Res<Input<KeyCode>>,
+// ) {
+//     let mut transform = query.single_mut();
+//     if keyboard_input.pressed(KeyCode::S) && transform.scale < CAMERA_MAX_SCALE {
+//         transform.scale = transform.scale + 0.01;
+//     }
+//     if keyboard_input.pressed(KeyCode::Z) && transform.scale > CAMERA_MIN_SCALE{
+//         transform.scale = transform.scale - 0.01;
+//     }
+//     if keyboard_input.pressed(KeyCode::R) {
+//         transform.scale = CAMERA_DEFAULT_SCALE;
+//     }
+//     if keyboard_input.pressed(KeyCode::M) {
+//         transform.scale = CAMERA_MAX_SCALE;
+//     }
 
-}
+// }
 
 pub fn track_player(
     player_query: Query<&Transform, With<Player>>,

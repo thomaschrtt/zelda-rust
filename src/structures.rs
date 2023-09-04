@@ -12,7 +12,7 @@ impl Plugin for StructuresPlugin {
         app.add_systems(OnExit(GameState::Menu), setup_structures)
             .add_systems(Update, (update_structures_pos,  
                                                     update_visibility, 
-                                                    change_visibility_with_keybinding, 
+                                                    // change_visibility_with_keybinding, 
                                                     update_collision_component,
                                                     update_sanctuary_color,
                                                 
@@ -190,16 +190,16 @@ fn update_visibility(mut query: Query<(&mut Visibility, &Sanctuary)>) {
     }
 }
 
-fn change_visibility_with_keybinding(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<&mut Sanctuary>,
-) {
-    if keyboard_input.just_pressed(KeyCode::V) {
-        for mut sanctuary in query.iter_mut() {
-            sanctuary.visibility = !sanctuary.visibility;
-        }
-    }
-}
+// fn change_visibility_with_keybinding(
+//     keyboard_input: Res<Input<KeyCode>>,
+//     mut query: Query<&mut Sanctuary>,
+// ) {
+//     if keyboard_input.just_pressed(KeyCode::V) {
+//         for mut sanctuary in query.iter_mut() {
+//             sanctuary.visibility = !sanctuary.visibility;
+//         }
+//     }
+// }
 
 fn update_collision_component(mut query: Query<(&mut CollisionComponent, &Sanctuary)>) {
     for (mut collision_component, sanctuary) in query.iter_mut() {

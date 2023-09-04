@@ -172,7 +172,7 @@ impl Ennemy {
 
 
     fn chase_player(&mut self, player: &Player, collision_query: &Query<&CollisionComponent, Without<Ennemy>>) {
-        self.state = EnnemyState::Chasing;
+        if !self.is_attacking() { self.state = EnnemyState::Chasing;}
         let (x, y) = player.get_pos();
         let dx = x - self.x();  // Difference in x positions
         let dy = y - self.y();  // Difference in y positions
@@ -275,7 +275,7 @@ impl Ennemy {
 
 
     fn is_doing_something(&self) -> bool {
-        self.is_taking_damage() || self.is_attacking() || self.is_blocking() || self.is_dying() || self.is_dead()
+        self.is_taking_damage() || self.is_blocking() || self.is_dying() || self.is_dead()
     }
 
     fn is_dead(&self) -> bool {
@@ -304,7 +304,9 @@ impl Collisionable for Ennemy {
 
 impl EntityBehavior for Ennemy {
     fn attack(&mut self, target: &mut dyn EntityBehavior) -> bool {
-        if !self.is_taking_damage() {self.state = EnnemyState::Attacking;}
+        if !self.is_taking_damage() {
+            self.state = EnnemyState::Attacking;
+        }
         if self.attacking_frame_counter == 6 && !self.attacking_has_hit{
             self.attacking_has_hit = true;
             return target.get_attacked(self.attack);
@@ -398,7 +400,7 @@ fn summon_ennemy(
         }
     }
 
-    let ennemy: Ennemy = Ennemy::new(x, y, 10, 5, 0.20);
+    let ennemy: Ennemy = Ennemy::new(x, y, 10, 5, ENNEMY_DEFENCE_RATIO);
     let hitbox = CollisionComponent::new(ennemy.x(), ennemy.y(), ENNEMY_HITBOX_WIDTH, ENNEMY_HITBOX_HEIGHT);
     let entity = (SpriteSheetBundle {
         texture_atlas: texture_atlas_handle.clone(),

@@ -192,6 +192,13 @@ pub fn setup_random_graves(
         let mut collisioncomponent: CollisionComponent;
         let index = rng.gen_range(0..3);
         loop {
+            let y_col = match index {
+                0 => y,
+                1 => y - 9.,
+                2 => y - 10.,
+                _ => y - 16.,
+            };
+
             let w = match index {
                 0 => 32.,
                 1 => 30.,
@@ -201,12 +208,12 @@ pub fn setup_random_graves(
 
             let h = match index {
                 0 => 57.,
-                1 => 41.,
-                2 => 40.,
+                1 => 17.,
+                2 => 22.,
                 _ => 40.,
             };
 
-            collisioncomponent = CollisionComponent::new(x , y, w, h);
+            collisioncomponent = CollisionComponent::new(x , y_col, w, h);
             if !collisionable_query.iter().any(|collisionable| collisioncomponent.would_collide_with(collisionable)) {
                 break;
             }

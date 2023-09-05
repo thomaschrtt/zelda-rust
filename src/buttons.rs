@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 
-use crate::constants::{BUTTON_WIDTH, BUTTON_HEIGHT};
-
 pub struct ButtonPlugin;
 
 impl Plugin for ButtonPlugin {

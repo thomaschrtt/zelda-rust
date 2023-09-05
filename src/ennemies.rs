@@ -450,6 +450,7 @@ fn ennemy_attack(
         if !ennemy.is_blocking() && !ennemy.is_dying() && !ennemy.is_dead() && !ennemy.is_loading() {
             if let Some(direction) = ennemy.facing_direction() {
                 let actual_player: &mut Player = &mut player;
+                if actual_player.is_aggroable() {
                 match direction {
                     FacingDirection::Up => {
                         if ennemy.would_collide(ennemy.x(), ennemy.y() + ENNEMY_ATTACK_RANGE, &actual_player.get_collision_component()) && collisions::equals(&direction, actual_player.get_relative_position(&ennemy.get_collision_component())) {
@@ -492,7 +493,7 @@ fn ennemy_attack(
                         }
                     },
                 }
-            }
+            }}
             
         }
     }

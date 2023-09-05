@@ -14,8 +14,6 @@ pub const Z_LAYER_GUI: f32 = f32::MAX;
 pub const Z_LAYER_STRUCTURES: f32 = 2.;
 pub const Z_LAYER_ENNEMIES: f32 = Z_LAYER_PLAYER;
 
-pub const BUTTON_WIDTH: f32 = 200.;
-pub const BUTTON_HEIGHT: f32 = 100.;
 
 // PLAYER
 pub const PLAYER_SPRITE_SIZE: f32 = 32.;
@@ -30,15 +28,15 @@ pub const PLAYER_ATTACK_DELAY: u64 = 1000;
 pub const PLAYER_HEALTH: i32 = 20;
 
 // STRUCTURES
+pub const SANCTUARY_NB: i32 = 8;
 pub const TOWER_HEIGHT: f32 = 128.;
 pub const TOWER_WIDTH: f32 = 67.;
 pub const SANCTUARY_HEIGHT: f32 = 75.;
 pub const SANCTUARY_WIDTH: f32 = 96.;
-pub const SANCTUARY_NB: i32 = 3;
 pub const SANCTUARY_HEALING: i32 = 5;
 
 // ENNEMIES
-pub const ENNEMIES_NUMBER: i32 = 40;
+pub const ENNEMIES_NUMBER: i32 = 60;
 pub const ENNEMY_SPRITE_SIZE: f32 = 32.;
 pub const ENNEMY_SPRITE_SCALE: f32 = 0.5;
 pub const ENNEMY_HITBOX_WIDTH: f32 = ENNEMY_SPRITE_SIZE * ENNEMY_SPRITE_SCALE;

@@ -68,6 +68,7 @@ pub enum PlayerState {
     Damaged,
     Healing,
     Dying,
+    Hiding,
     Dead
 }
 
@@ -118,7 +119,7 @@ impl Player {
     }
 
     pub fn is_aggroable(&self) -> bool {
-        if self.is_dead() || self.is_healing() || self.is_dying() {
+        if self.is_dead() || self.is_healing() || self.is_dying() || self.is_hiding() {
             return false;
         }
         true
@@ -169,6 +170,10 @@ impl Player {
         self.state == PlayerState::Dying
     }
 
+    fn is_hiding(&self) -> bool {
+        self.state == PlayerState::Hiding
+    }
+
     fn heal(&mut self) {
         self.self_entity.add_health(SANCTUARY_HEALING);
         println!("Player health now at {}", self.self_entity.health());
@@ -202,6 +207,7 @@ impl EntityBehavior for Player {
         }
         self.take_damage(damage);
         println!("Player took {} damage", damage);
+        println!("Player health now at {}", self.self_entity.health());
         true
     }
 
@@ -318,6 +324,9 @@ fn update_player_state(
     } 
     else if keyboard_input.pressed(KeyCode::E) {
         player.state = PlayerState::Blocking;
+    }
+    else if keyboard_input.pressed(KeyCode::A) {
+        player.state = PlayerState::Hiding;
     }
     else {
         player.state = PlayerState::Idle;
@@ -528,6 +537,9 @@ fn update_player_sprite(
                 player.damaged_duration_elapsed = 0.;
             }
         }
+        PlayerState::Hiding => {
+            texture.index = 35;
+        },
     }
 }
 
@@ -716,10 +728,12 @@ pub fn background_elements_transparency(
             match obj.get_type() {
             BackgroundObjectType::Tree => TREE_WIDTH*TREE_TRANSPARENCY,
             BackgroundObjectType::Bush => BUSH_WIDTH*BUSH_TRANSPARENCY,
+            BackgroundObjectType::Bench => 28.0,
             _ => 0.,
         }, match obj.get_type() {
             BackgroundObjectType::Tree => TREE_HEIGHT*TREE_TRANSPARENCY,
             BackgroundObjectType::Bush => BUSH_HEIGHT*BUSH_TRANSPARENCY,
+            BackgroundObjectType::Bench => 15.0,
             _ => 0.,
         });
 
